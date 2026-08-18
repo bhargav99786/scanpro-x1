@@ -61,6 +61,7 @@ struct TaskItem {
 };
 
 struct TaskDef { 
+  char id[32];
   char name[32]; 
   char prio[16]; 
   lv_color_t prio_color;
@@ -71,6 +72,10 @@ struct TaskDef {
 static TaskDef current_tasks[MAX_TASKS];
 static int current_task_count = 0;
 static lv_obj_t *tasks_content_ptr = NULL;
+
+static TaskDef *active_task = NULL;
+static lv_obj_t *scr_task_detail = NULL;
+static lv_obj_t *task_detail_content = NULL;
 
 // ---- Inventory data ----
 #define MAX_INVENTORY 50
@@ -117,6 +122,8 @@ static void nav_inventory_cb(lv_event_t *e);
 static void nav_conn_cb(lv_event_t *e);
 static void nav_settings_cb(lv_event_t *e);
 static void _ta_event_cb(lv_event_t *e);
+static void task_row_event_cb(lv_event_t *e);
+static void task_detail_back_cb(lv_event_t *e);
 extern void devicePowerOff();
 inline void uiSetWifiStatus(const String &text);
 
@@ -464,6 +471,10 @@ static void update_tasks_ui() {
     lv_obj_set_style_radius(row, 6, 0);
     lv_obj_set_style_pad_all(row, 2, 0);
     lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+    
+    // Make row clickable
+    lv_obj_add_flag(row, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(row, task_row_event_cb, LV_EVENT_CLICKED, &current_tasks[i]);
 
     lv_obj_t *name = lv_label_create(row);
     lv_label_set_text(name, current_tasks[i].name);
@@ -493,6 +504,97 @@ static void update_tasks_ui() {
     lv_obj_set_style_text_font(b_lbl, &lv_font_montserrat_12, 0);
     lv_obj_center(b_lbl);
   }
+}
+
+static void update_task_detail_ui() {
+  if (!task_detail_content || !active_task) return;
+  lv_obj_clean(task_detail_content);
+
+  lv_obj_t *header = lv_label_create(task_detail_content);
+  lv_label_set_text(header, active_task->name);
+  lv_obj_set_style_text_color(header, COLOR_NAVY_BLUE, 0);
+  lv_obj_set_style_text_font(header, &lv_font_montserrat_16, 0);
+  lv_obj_set_style_pad_bottom(header, 10, 0);
+
+  for (int i = 0; i < active_task->item_count; i++) {
+    TaskItem &itm = active_task->items[i];
+    
+    lv_obj_t *row = lv_obj_create(task_detail_content);
+    lv_obj_set_size(row, LV_PCT(100), 40);
+    lv_obj_set_style_bg_color(row, COLOR_WHITE, 0);
+    lv_obj_set_style_border_color(row, COLOR_CARD_BRD, 0);
+    lv_obj_set_style_border_width(row, 1, 0);
+    lv_obj_set_style_radius(row, 4, 0);
+    lv_obj_set_style_pad_all(row, 4, 0);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+    
+    if (itm.picked_qty >= itm.target_qty) {
+      lv_obj_set_style_bg_color(row, lv_color_hex(0xE8F5E9), 0); // light green
+    }
+
+    lv_obj_t *name = lv_label_create(row);
+    lv_label_set_text(name, itm.name);
+    lv_obj_set_style_text_color(name, COLOR_NAVY, 0);
+    lv_obj_set_style_text_font(name, &lv_font_montserrat_14, 0);
+    lv_obj_align(name, LV_ALIGN_LEFT_MID, 4, 0);
+
+    lv_obj_t *qty = lv_label_create(row);
+    char qty_text[32];
+    snprintf(qty_text, sizeof(qty_text), "%d / %d", itm.picked_qty, itm.target_qty);
+    lv_label_set_text(qty, qty_text);
+    lv_obj_set_style_text_color(qty, COLOR_CYAN, 0);
+    lv_obj_set_style_text_font(qty, &lv_font_montserrat_14, 0);
+    lv_obj_align(qty, LV_ALIGN_RIGHT_MID, -4, 0);
+  }
+}
+
+static void build_task_detail_screen() {
+  if (scr_task_detail == NULL) {
+    scr_task_detail = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(scr_task_detail, COLOR_BG, 0);
+    
+    lv_obj_t *bar = lv_obj_create(scr_task_detail);
+    lv_obj_set_size(bar, 480, 32);
+    lv_obj_set_pos(bar, 0, 0);
+    lv_obj_set_style_bg_color(bar, lv_color_hex(0x050A1A), 0);
+    lv_obj_set_style_border_width(bar, 0, 0);
+    lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
+    
+    lv_obj_t *back_btn = lv_btn_create(bar);
+    lv_obj_set_size(back_btn, 72, 24);
+    lv_obj_align(back_btn, LV_ALIGN_LEFT_MID, 6, 0);
+    lv_obj_set_style_bg_color(back_btn, COLOR_NAVY_BLUE, 0);
+    lv_obj_t *tb_lbl = lv_label_create(back_btn);
+    lv_label_set_text(tb_lbl, LV_SYMBOL_LEFT " BACK");
+    lv_obj_center(tb_lbl);
+    lv_obj_add_event_cb(back_btn, task_detail_back_cb, LV_EVENT_CLICKED, NULL);
+    
+    lv_obj_t *title = lv_label_create(bar);
+    lv_label_set_text(title, "Picking Task");
+    lv_obj_set_style_text_color(title, COLOR_CYAN, 0);
+    lv_obj_align(title, LV_ALIGN_CENTER, 0, 0);
+
+    task_detail_content = lv_obj_create(scr_task_detail);
+    lv_obj_set_size(task_detail_content, 480, 320 - 32);
+    lv_obj_set_pos(task_detail_content, 0, 32);
+    lv_obj_set_style_bg_color(task_detail_content, COLOR_BG, 0);
+    lv_obj_set_style_border_width(task_detail_content, 0, 0);
+    lv_obj_set_flex_flow(task_detail_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_all(task_detail_content, 8, 0);
+    lv_obj_set_style_pad_row(task_detail_content, 6, 0);
+  }
+  update_task_detail_ui();
+}
+
+static void task_row_event_cb(lv_event_t *e) {
+  active_task = (TaskDef *)lv_event_get_user_data(e);
+  build_task_detail_screen();
+  lv_scr_load_anim(scr_task_detail, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
+}
+
+static void task_detail_back_cb(lv_event_t *e) {
+  active_task = NULL;
+  lv_scr_load_anim(scr_tasks, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
 }
 
 static void build_tasks_screen() {

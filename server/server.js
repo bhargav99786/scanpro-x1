@@ -291,6 +291,9 @@ mqttClient.on('connect', () => {
     mqttClient.subscribe('device/+/status', (err) => {
         if (!err) console.log('[MQTT] Subscribed to device/+/status');
     });
+    mqttClient.subscribe('device/+/task_complete', (err) => {
+        if (!err) console.log('[MQTT] Subscribed to device/+/task_complete');
+    });
     
     // Publish users as a retained message upon broker connection
     if (db.users) {
@@ -340,6 +343,43 @@ mqttClient.on('message', (topic, message) => {
                     c.send(JSON.stringify({ type: 'UPDATE_DEVICES', data: db.active_devices }));
                 }
             });
+        } else if (topic.endsWith('/task_complete')) {
+            console.log('Received task completion:', payload);
+            if (!db.tasks || !db.inventory) return;
+            
+            const taskIndex = db.tasks.findIndex(t => t.id === payload.task_id);
+            if (taskIndex !== -1) {
+                const task = db.tasks[taskIndex];
+                
+                // Deduct inventory
+                if (task.items) {
+                    task.items.forEach(item => {
+                        if (db.inventory[item.sku]) {
+                            db.inventory[item.sku].qty = Math.max(0, db.inventory[item.sku].qty - item.target_qty);
+                        }
+                    });
+                }
+                
+                const assignee = task.assignee;
+                // Delete the task
+                db.tasks.splice(taskIndex, 1);
+                saveData();
+                
+                // Update specific assignee's tasks
+                publishTasksForAssignee(assignee);
+                
+                // Publish global inventory updates
+                const invList = Object.keys(db.inventory).map(k => ({ sku: k, name: db.inventory[k].name, qty: db.inventory[k].qty }));
+                mqttClient.publish('config/inventory', JSON.stringify(invList), { retain: true });
+                
+                // Broadcast UI updates
+                wss.clients.forEach(c => {
+                    if (c.readyState === WebSocket.OPEN) {
+                        c.send(JSON.stringify({ type: 'UPDATE_TASKS', data: db.tasks }));
+                        c.send(JSON.stringify({ type: 'UPDATE_INVENTORY', data: invList }));
+                    }
+                });
+            }
         }
     } catch (e) {
         console.error('Error parsing MQTT payload on topic ' + topic, e);

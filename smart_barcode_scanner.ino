@@ -100,6 +100,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     for (JsonObject t : arr) {
       if (current_task_count >= MAX_TASKS) break;
       
+      strncpy(current_tasks[current_task_count].id, t["id"] | "", 31);
+      current_tasks[current_task_count].id[31] = '\0';
+      
       strncpy(current_tasks[current_task_count].name, t["name"] | "Unknown Task", 31);
       current_tasks[current_task_count].name[31] = '\0';
       
@@ -286,14 +289,56 @@ void loop() {
       // QR format: "USER:<username>:<pin>"  e.g.  "USER:bhargav:1234"
       uiLoginViaScan(sku);
     } else {
-      // ── Normal product scan flow ─────────────────────────────────────────────
-      beepSuccess();          // instant audio feedback
-      bleNotifyScan(sku);     // notify via BLE if connected
-      uiShowScanResult(sku);
-      if (mqtt.connected()) {
-        publishScan(sku);
+      if (active_task != NULL) {
+        // We are in Task Picking Mode
+        bool match_found = false;
+        bool all_done = true;
+        
+        for (int i = 0; i < active_task->item_count; i++) {
+          if (String(active_task->items[i].sku) == sku) {
+            match_found = true;
+            if (active_task->items[i].picked_qty < active_task->items[i].target_qty) {
+              active_task->items[i].picked_qty++;
+              beepSuccess();
+              update_task_detail_ui();
+            } else {
+              // Already fully picked this item
+              beepError();
+            }
+          }
+          if (active_task->items[i].picked_qty < active_task->items[i].target_qty) {
+            all_done = false;
+          }
+        }
+        
+        if (!match_found) {
+          beepError(); // Scanned item not in task
+        } else if (all_done) {
+          // Task completed!
+          beepStartup(); // Special sound
+          
+          if (mqtt.connected()) {
+            StaticJsonDocument<128> doc;
+            doc["task_id"] = active_task->id;
+            char payload[128];
+            serializeJson(doc, payload);
+            mqtt.publish(("device/" + String(DEVICE_ID) + "/task_complete").c_str(), payload);
+          }
+          
+          // Return to task list
+          active_task = NULL;
+          lv_scr_load_anim(scr_tasks, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
+        }
       } else {
-        Serial.println("[scan] MQTT not connected - scan shown locally only");
+        // ── Normal product scan flow ─────────────────────────────────────────────
+        beepSuccess();          // instant audio feedback
+        bleNotifyScan(sku);     // notify via BLE if connected
+        uiShowScanResult(sku);
+        if (mqtt.connected()) {
+          publishScan(sku);
+        } else {
+          Serial.println("[scan] MQTT not connected - scan shown locally only");
+        }
       }
     }
   }
