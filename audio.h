@@ -113,6 +113,13 @@ inline void beepSuccess()
     _playBeep(2500, 50);
 }
 
+// Low double beep — played when scanning wrong item or invalid barcode
+inline void beepError()
+{
+    _playBeep(400, 100); delay(50);
+    _playBeep(300, 150);
+}
+
 // Ascending triple chirp played once at the end of setup()
 inline void beepStartup()
 {
