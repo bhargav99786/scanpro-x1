@@ -62,7 +62,6 @@ struct TaskItem {
 
 struct TaskDef { 
   char name[32]; 
-  char sub[32]; 
   char prio[16]; 
   lv_color_t prio_color;
   int item_count;
@@ -474,7 +473,7 @@ static void update_tasks_ui() {
 
     lv_obj_t *sub = lv_label_create(row);
     char sub_text[64];
-    snprintf(sub_text, sizeof(sub_text), "%s | %d items", current_tasks[i].sub, current_tasks[i].item_count);
+    snprintf(sub_text, sizeof(sub_text), "%d items", current_tasks[i].item_count);
     lv_label_set_text(sub, sub_text);
     lv_obj_set_style_text_color(sub, COLOR_MUTE, 0);
     lv_obj_set_style_text_font(sub, &lv_font_montserrat_12, 0);

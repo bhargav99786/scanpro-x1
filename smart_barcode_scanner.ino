@@ -103,9 +103,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       strncpy(current_tasks[current_task_count].name, t["name"] | "Unknown Task", 31);
       current_tasks[current_task_count].name[31] = '\0';
       
-      strncpy(current_tasks[current_task_count].sub, t["sub"] | "No detail", 31);
-      current_tasks[current_task_count].sub[31] = '\0';
-      
       String prio = t["prio"] | "Low";
       strncpy(current_tasks[current_task_count].prio, prio.c_str(), 15);
       current_tasks[current_task_count].prio[15] = '\0';

@@ -90,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `
                 <td class="mono">${task.assignee || task.device_id || 'Unassigned'}</td>
                 <td style="font-weight: 600">${task.name}</td>
-                <td style="color: var(--text-secondary)">${task.sub}</td>
                 <td><span class="badge" style="background: var(--accent-purple, #9d4edd); color: white">${task.items ? task.items.length : 0} items</span></td>
                 <td><span class="badge" style="background: var(--accent-blue); color: white">${task.prio}</span></td>
                 <td>
@@ -389,7 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('task-id').value = task.id;
                 document.getElementById('task-assignee').value = task.assignee || task.device_id || '';
                 document.getElementById('task-name').value = task.name;
-                document.getElementById('task-sub').value = task.sub;
                 document.getElementById('task-prio').value = task.prio;
                 
                 // Clear items
@@ -421,7 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const taskId = document.getElementById('task-id').value;
         const assignee = document.getElementById('task-assignee').value;
         const name = document.getElementById('task-name').value;
-        const sub = document.getElementById('task-sub').value;
         const prio = document.getElementById('task-prio').value;
 
         const items = [];
@@ -441,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assignee, name, sub, prio, items })
+            body: JSON.stringify({ assignee, name, prio, items })
         })
         .then(res => res.json())
         .then(data => {

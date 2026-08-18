@@ -134,11 +134,11 @@ function publishTasksForAssignee(assignee) {
 }
 
 app.post('/api/tasks', (req, res) => {
-    const { assignee, name, sub, prio, items } = req.body;
+    const { assignee, name, prio, items } = req.body;
     if (!assignee || !name) return res.status(400).json({ error: 'assignee and name required' });
     
     if (!db.tasks) db.tasks = [];
-    const newTask = { id: Date.now().toString(), assignee, name, sub, prio, items: items || [] };
+    const newTask = { id: Date.now().toString(), assignee, name, prio, items: items || [] };
     db.tasks.push(newTask);
     saveData();
     
@@ -157,7 +157,7 @@ app.post('/api/tasks', (req, res) => {
 
 app.put('/api/tasks/:id', (req, res) => {
     const taskId = req.params.id;
-    const { assignee, name, sub, prio, items } = req.body;
+    const { assignee, name, prio, items } = req.body;
     if (!db.tasks) return res.status(404).json({ error: 'No tasks found' });
     
     const taskIndex = db.tasks.findIndex(t => t.id === taskId);
@@ -165,7 +165,7 @@ app.put('/api/tasks/:id', (req, res) => {
     
     const oldAssignee = db.tasks[taskIndex].assignee;
     
-    db.tasks[taskIndex] = { ...db.tasks[taskIndex], assignee, name, sub, prio, items: items || [] };
+    db.tasks[taskIndex] = { ...db.tasks[taskIndex], assignee, name, prio, items: items || [] };
     saveData();
     
     // If assignee changed, clear tasks for old assignee
