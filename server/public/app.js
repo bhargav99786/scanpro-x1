@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // State
     let totalScans = 0;
     let cachedInventory = [];
+    let cachedUsers = [];
 
     // WebSocket Connection
     const ws = new WebSocket(`ws://${window.location.host}`);
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         [...tasksArr].reverse().forEach(task => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="mono">${task.device_id}</td>
+                <td class="mono">${task.assignee || task.device_id || 'Unassigned'}</td>
                 <td style="font-weight: 600">${task.name}</td>
                 <td style="color: var(--text-secondary)">${task.sub}</td>
                 <td><span class="badge" style="background: var(--accent-purple, #9d4edd); color: white">${task.items ? task.items.length : 0} items</span></td>
@@ -112,7 +113,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function populateAssigneeDropdown() {
+        const select = document.getElementById('task-assignee');
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Select User --</option>';
+        cachedUsers.forEach(u => {
+            select.innerHTML += `<option value="${u.name}">${u.name} (${u.role})</option>`;
+        });
+    }
+
     function renderUsers(usersArr) {
+        cachedUsers = usersArr;
+        populateAssigneeDropdown();
         const tbody = document.getElementById('user-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -322,9 +334,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 <select class="item-sku" style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
                     ${options}
                 </select>
-                <input type="number" class="item-qty" placeholder="Qty" min="1" value="1" style="width: 80px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <input type="number" class="item-qty" placeholder="Qty" min="1" value="1" style="width: 80px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
+                    <span class="qty-hint" style="font-size: 10px; color: var(--text-secondary);"></span>
+                </div>
                 <button type="button" class="remove-item-btn" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger); color: var(--accent-danger); cursor: pointer; border-radius: 4px; padding: 4px 8px;">X</button>
             `;
+            
+            const skuSelect = row.querySelector('.item-sku');
+            const qtyInput = row.querySelector('.item-qty');
+            const qtyHint = row.querySelector('.qty-hint');
+            
+            skuSelect.addEventListener('change', () => {
+                const selectedSku = skuSelect.value;
+                const invItem = cachedInventory.find(i => i.sku === selectedSku);
+                if (invItem) {
+                    qtyInput.max = invItem.qty;
+                    qtyHint.textContent = `Max: ${invItem.qty}`;
+                    if (parseInt(qtyInput.value) > parseInt(invItem.qty)) {
+                        qtyInput.value = invItem.qty;
+                    }
+                } else {
+                    qtyInput.removeAttribute('max');
+                    qtyHint.textContent = '';
+                }
+            });
             
             row.querySelector('.remove-item-btn').addEventListener('click', () => row.remove());
             taskItemsContainer.appendChild(row);
@@ -334,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Task Form Submit
     document.getElementById('task-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        const device_id = document.getElementById('task-device').value;
+        const assignee = document.getElementById('task-assignee').value;
         const name = document.getElementById('task-name').value;
         const sub = document.getElementById('task-sub').value;
         const prio = document.getElementById('task-prio').value;
@@ -353,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ device_id, name, sub, prio, items })
+            body: JSON.stringify({ assignee, name, sub, prio, items })
         })
         .then(res => res.json())
         .then(data => {

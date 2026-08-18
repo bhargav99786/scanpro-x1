@@ -121,19 +121,29 @@ app.get('/api/tasks', (req, res) => {
     res.json(db.tasks || []);
 });
 
+function publishTasksForAssignee(assignee) {
+    const activeDevices = db.active_devices || {};
+    const userTasks = (db.tasks || []).filter(t => t.assignee === assignee);
+    
+    for (const [deviceId, data] of Object.entries(activeDevices)) {
+        if (data.user === assignee) {
+            console.log(`[MQTT] Publishing tasks to device/${deviceId}/tasks for user ${assignee}`);
+            mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
+        }
+    }
+}
+
 app.post('/api/tasks', (req, res) => {
-    const { device_id, name, sub, prio, items } = req.body;
-    if (!device_id || !name) return res.status(400).json({ error: 'device_id and name required' });
+    const { assignee, name, sub, prio, items } = req.body;
+    if (!assignee || !name) return res.status(400).json({ error: 'assignee and name required' });
     
     if (!db.tasks) db.tasks = [];
-    const newTask = { id: Date.now().toString(), device_id, name, sub, prio, items: items || [] };
+    const newTask = { id: Date.now().toString(), assignee, name, sub, prio, items: items || [] };
     db.tasks.push(newTask);
     saveData();
     
-    // Publish the updated tasks list to the specific device
-    const deviceTasks = db.tasks.filter(t => t.device_id === device_id);
-    console.log(`[MQTT] Publishing tasks to device/${device_id}/tasks:`, deviceTasks);
-    mqttClient.publish(`device/${device_id}/tasks`, JSON.stringify(deviceTasks), { retain: true });
+    // Publish the updated tasks list to any devices the assignee is using
+    publishTasksForAssignee(assignee);
     
     // Broadcast UI update
     wss.clients.forEach(c => {
@@ -152,14 +162,12 @@ app.delete('/api/tasks/:id', (req, res) => {
     const taskIndex = db.tasks.findIndex(t => t.id === taskId);
     if (taskIndex === -1) return res.status(404).json({ error: 'Task not found' });
     
-    const device_id = db.tasks[taskIndex].device_id;
+    const assignee = db.tasks[taskIndex].assignee || db.tasks[taskIndex].device_id;
     db.tasks.splice(taskIndex, 1);
     saveData();
     
-    // Publish updated tasks to device
-    const deviceTasks = db.tasks.filter(t => t.device_id === device_id);
-    console.log(`[MQTT] Publishing tasks to device/${device_id}/tasks (after delete):`, deviceTasks);
-    mqttClient.publish(`device/${device_id}/tasks`, JSON.stringify(deviceTasks), { retain: true });
+    // Publish updated tasks to any devices the assignee is using
+    publishTasksForAssignee(assignee);
     
     // Broadcast UI update
     wss.clients.forEach(c => {
@@ -286,8 +294,13 @@ mqttClient.on('message', (topic, message) => {
             
             if (payload.status === 'online') {
                 db.active_devices[deviceId] = { user: payload.user, ts: payload.ts || Date.now() };
+                // Send tasks for this user directly to the newly connected device
+                const userTasks = (db.tasks || []).filter(t => t.assignee === payload.user);
+                mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
             } else {
                 delete db.active_devices[deviceId];
+                // Clear tasks from the device screen
+                mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify([]), { retain: true });
             }
             saveData();
             
