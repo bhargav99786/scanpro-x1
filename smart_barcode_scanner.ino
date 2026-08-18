@@ -88,7 +88,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.printf("[mqtt] Message arrived on topic: %s\n", topic);
   if (String(topic).endsWith("/tasks")) {
     // Payload is a JSON array of tasks
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<4096> doc;
     DeserializationError error = deserializeJson(doc, payload, length);
     if (error) {
       Serial.printf("[mqtt] Failed to parse tasks JSON: %s\n", error.c_str());
@@ -113,6 +113,23 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       if (prio == "High") current_tasks[current_task_count].prio_color = COLOR_DANGER;
       else if (prio == "Med" || prio == "Medium") current_tasks[current_task_count].prio_color = COLOR_SAFFRON;
       else current_tasks[current_task_count].prio_color = COLOR_GREEN;
+      
+      // Parse items
+      current_tasks[current_task_count].item_count = 0;
+      if (t["items"].is<JsonArray>()) {
+        JsonArray itemsArr = t["items"].as<JsonArray>();
+        for (JsonObject itm : itemsArr) {
+          if (current_tasks[current_task_count].item_count >= MAX_ITEMS_PER_TASK) break;
+          int idx = current_tasks[current_task_count].item_count;
+          strncpy(current_tasks[current_task_count].items[idx].sku, itm["sku"] | "", 31);
+          current_tasks[current_task_count].items[idx].sku[31] = '\0';
+          strncpy(current_tasks[current_task_count].items[idx].name, itm["name"] | "Unknown", 31);
+          current_tasks[current_task_count].items[idx].name[31] = '\0';
+          current_tasks[current_task_count].items[idx].target_qty = itm["target_qty"] | 1;
+          current_tasks[current_task_count].items[idx].picked_qty = itm["picked_qty"] | 0;
+          current_tasks[current_task_count].item_count++;
+        }
+      }
       
       current_task_count++;
     }

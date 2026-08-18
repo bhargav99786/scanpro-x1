@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let totalScans = 0;
+    let cachedInventory = [];
 
     // WebSocket Connection
     const ws = new WebSocket(`ws://${window.location.host}`);
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="mono">${task.device_id}</td>
                 <td style="font-weight: 600">${task.name}</td>
                 <td style="color: var(--text-secondary)">${task.sub}</td>
+                <td><span class="badge" style="background: var(--accent-purple, #9d4edd); color: white">${task.items ? task.items.length : 0} items</span></td>
                 <td><span class="badge" style="background: var(--accent-blue); color: white">${task.prio}</span></td>
                 <td><button class="delete-task-btn" data-id="${task.id}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button></td>
             `;
@@ -197,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadInventory();
 
     function renderInventory(data) {
+        cachedInventory = data;
         const tbody = document.getElementById('inventory-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -299,6 +302,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Task Items Logic
+    const addTaskItemBtn = document.getElementById('add-task-item-btn');
+    const taskItemsContainer = document.getElementById('task-items-container');
+    
+    if (addTaskItemBtn && taskItemsContainer) {
+        addTaskItemBtn.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'task-item-row';
+            row.style.display = 'flex';
+            row.style.gap = '8px';
+            
+            let options = '<option value="">-- Select Item --</option>';
+            cachedInventory.forEach(inv => {
+                options += `<option value="${inv.sku}">${inv.name} (${inv.sku})</option>`;
+            });
+            
+            row.innerHTML = `
+                <select class="item-sku" style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
+                    ${options}
+                </select>
+                <input type="number" class="item-qty" placeholder="Qty" min="1" value="1" style="width: 80px; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
+                <button type="button" class="remove-item-btn" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger); color: var(--accent-danger); cursor: pointer; border-radius: 4px; padding: 4px 8px;">X</button>
+            `;
+            
+            row.querySelector('.remove-item-btn').addEventListener('click', () => row.remove());
+            taskItemsContainer.appendChild(row);
+        });
+    }
+
     // Task Form Submit
     document.getElementById('task-form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -307,16 +339,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const sub = document.getElementById('task-sub').value;
         const prio = document.getElementById('task-prio').value;
 
+        const items = [];
+        const itemRows = document.querySelectorAll('.task-item-row');
+        itemRows.forEach(row => {
+            const sku = row.querySelector('.item-sku').value;
+            const qty = parseInt(row.querySelector('.item-qty').value) || 1;
+            const invItem = cachedInventory.find(i => i.sku === sku);
+            if (sku && invItem) {
+                items.push({ sku, name: invItem.name, target_qty: qty, picked_qty: 0 });
+            }
+        });
+
         fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ device_id, name, sub, prio })
+            body: JSON.stringify({ device_id, name, sub, prio, items })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
                 document.getElementById('task-form').reset();
-                const btn = e.target.querySelector('button');
+                document.getElementById('task-items-container').innerHTML = '';
+                const btn = e.target.querySelector('button[type="submit"]');
                 const origText = btn.textContent;
                 btn.textContent = 'Assigned!';
                 btn.style.background = 'var(--accent-saffron)';

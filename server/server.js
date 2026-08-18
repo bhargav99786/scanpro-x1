@@ -122,11 +122,11 @@ app.get('/api/tasks', (req, res) => {
 });
 
 app.post('/api/tasks', (req, res) => {
-    const { device_id, name, sub, prio } = req.body;
+    const { device_id, name, sub, prio, items } = req.body;
     if (!device_id || !name) return res.status(400).json({ error: 'device_id and name required' });
     
     if (!db.tasks) db.tasks = [];
-    const newTask = { id: Date.now().toString(), device_id, name, sub, prio };
+    const newTask = { id: Date.now().toString(), device_id, name, sub, prio, items: items || [] };
     db.tasks.push(newTask);
     saveData();
     

@@ -153,6 +153,13 @@
                                 <label for="task-prio">Priority</label>
                                 <input type="text" id="task-prio" placeholder="e.g. High" required>
                             </div>
+                            
+                            <div class="form-group">
+                                <label>Task Items</label>
+                                <div id="task-items-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+                                <button type="button" id="add-task-item-btn" style="background: transparent; border: 1px dashed var(--accent-cyan); color: var(--accent-cyan); cursor: pointer; border-radius: 4px; padding: 4px 12px; font-weight: 600; font-size: 0.9rem;">+ Add Item</button>
+                            </div>
+                            
                             <button type="submit" class="btn-primary">Assign Task</button>
                         </form>
                     </div>
@@ -163,6 +170,7 @@
                                     <th>Device ID</th>
                                     <th>Task</th>
                                     <th>Subtext</th>
+                                    <th>Items</th>
                                     <th>Priority</th>
                                     <th>Action</th>
                                 </tr>

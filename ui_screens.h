@@ -50,20 +50,27 @@ inline UserDef global_users[MAX_USERS];
 inline int global_user_count = 0;
 
 // ---- Tasks data ----
-#define MAX_TASKS 4
+#define MAX_TASKS 10
+#define MAX_ITEMS_PER_TASK 5
+
+struct TaskItem {
+  char sku[32];
+  char name[32];
+  int target_qty;
+  int picked_qty;
+};
+
 struct TaskDef { 
   char name[32]; 
   char sub[32]; 
   char prio[16]; 
-  lv_color_t prio_color; 
+  lv_color_t prio_color;
+  int item_count;
+  TaskItem items[MAX_ITEMS_PER_TASK];
 };
-static TaskDef current_tasks[MAX_TASKS] = {
-    {"Pick list #4521",         "In progress - 34/120", "High", COLOR_DANGER},
-    {"Inbound receiving #A12",  "Not started",          "Med",  COLOR_SAFFRON},
-    {"Put-away - Zone 5",       "Not started",          "Med",  COLOR_SAFFRON},
-    {"Cycle count - Aisle 9",   "Not started",          "Low",  COLOR_GREEN},
-};
-static int current_task_count = 4;
+
+static TaskDef current_tasks[MAX_TASKS];
+static int current_task_count = 0;
 static lv_obj_t *tasks_content_ptr = NULL;
 
 // ---- Inventory data ----
@@ -466,7 +473,9 @@ static void update_tasks_ui() {
     lv_obj_align(name, LV_ALIGN_TOP_LEFT, 6, 2);
 
     lv_obj_t *sub = lv_label_create(row);
-    lv_label_set_text(sub, current_tasks[i].sub);
+    char sub_text[64];
+    snprintf(sub_text, sizeof(sub_text), "%s | %d items", current_tasks[i].sub, current_tasks[i].item_count);
+    lv_label_set_text(sub, sub_text);
     lv_obj_set_style_text_color(sub, COLOR_MUTE, 0);
     lv_obj_set_style_text_font(sub, &lv_font_montserrat_12, 0);
     lv_obj_align(sub, LV_ALIGN_BOTTOM_LEFT, 6, -2);
