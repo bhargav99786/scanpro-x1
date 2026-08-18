@@ -137,6 +137,7 @@
                     <div class="inventory-form-card">
                         <h3>Create & Assign Task</h3>
                         <form id="task-form">
+                            <input type="hidden" id="task-id">
                             <div class="form-group">
                                 <label for="task-assignee">Assign To User</label>
                                 <select id="task-assignee" required>
@@ -162,7 +163,10 @@
                                 <button type="button" id="add-task-item-btn" style="background: transparent; border: 1px dashed var(--accent-cyan); color: var(--accent-cyan); cursor: pointer; border-radius: 4px; padding: 4px 12px; font-weight: 600; font-size: 0.9rem;">+ Add Item</button>
                             </div>
                             
-                            <button type="submit" class="btn-primary">Assign Task</button>
+                            <div style="display:flex; gap:12px;">
+                                <button type="submit" class="btn-primary" id="task-submit-btn" style="flex:1;">Assign Task</button>
+                                <button type="button" id="task-form-reset" class="btn-primary" style="display:none; flex:1; background:transparent; border:1px solid var(--border-color); color:var(--text-secondary);">Cancel Edit</button>
+                            </div>
                         </form>
                     </div>
                     <div class="data-table-container">

@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalScans = 0;
     let cachedInventory = [];
     let cachedUsers = [];
+    let cachedTasks = [];
 
     // WebSocket Connection
     const ws = new WebSocket(`ws://${window.location.host}`);
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderTasks(tasksArr) {
+        cachedTasks = tasksArr;
         const tbody = document.getElementById('task-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -107,7 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="color: var(--text-secondary)">${task.sub}</td>
                 <td><span class="badge" style="background: var(--accent-purple, #9d4edd); color: white">${task.items ? task.items.length : 0} items</span></td>
                 <td><span class="badge" style="background: var(--accent-blue); color: white">${task.prio}</span></td>
-                <td><button class="delete-task-btn" data-id="${task.id}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button></td>
+                <td>
+                    <button class="edit-task-btn" data-id="${task.id}" style="background: rgba(0,200,255,0.15); border: 1px solid var(--accent-cyan, #00c8ff); color: #00c8ff; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600; margin-right: 6px;">Modify</button>
+                    <button class="delete-task-btn" data-id="${task.id}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -365,9 +370,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const taskResetBtn = document.getElementById('task-form-reset');
+    
+    function resetTaskForm() {
+        document.getElementById('task-form').reset();
+        document.getElementById('task-id').value = '';
+        document.getElementById('task-items-container').innerHTML = '';
+        const btn = document.getElementById('task-submit-btn');
+        if (btn) btn.textContent = 'Assign Task';
+        if (taskResetBtn) taskResetBtn.style.display = 'none';
+    }
+    if (taskResetBtn) taskResetBtn.addEventListener('click', resetTaskForm);
+
+    const taskTableBody = document.getElementById('task-table-body');
+    if (taskTableBody) {
+        taskTableBody.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-task-btn');
+            if (deleteBtn) {
+                const taskId = deleteBtn.getAttribute('data-id');
+                fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) alert('Failed to delete task');
+                    });
+                return;
+            }
+
+            const editBtn = e.target.closest('.edit-task-btn');
+            if (editBtn) {
+                const taskId = editBtn.getAttribute('data-id');
+                const task = cachedTasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                document.getElementById('task-id').value = task.id;
+                document.getElementById('task-assignee').value = task.assignee || task.device_id || '';
+                document.getElementById('task-name').value = task.name;
+                document.getElementById('task-sub').value = task.sub;
+                document.getElementById('task-prio').value = task.prio;
+                
+                // Clear items
+                taskItemsContainer.innerHTML = '';
+                
+                if (task.items) {
+                    task.items.forEach(item => {
+                        addTaskItemBtn.click();
+                        const newRow = taskItemsContainer.lastElementChild;
+                        const skuSelect = newRow.querySelector('.item-sku');
+                        skuSelect.value = item.sku;
+                        skuSelect.dispatchEvent(new Event('change'));
+                        
+                        const qtyInput = newRow.querySelector('.item-qty');
+                        qtyInput.value = item.target_qty;
+                    });
+                }
+                
+                const btn = document.getElementById('task-submit-btn');
+                if (btn) btn.textContent = 'Update Task';
+                if (taskResetBtn) taskResetBtn.style.display = 'block';
+            }
+        });
+    }
+
     // Task Form Submit
     document.getElementById('task-form').addEventListener('submit', (e) => {
         e.preventDefault();
+        const taskId = document.getElementById('task-id').value;
         const assignee = document.getElementById('task-assignee').value;
         const name = document.getElementById('task-name').value;
         const sub = document.getElementById('task-sub').value;
@@ -384,19 +451,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        fetch('/api/tasks', {
-            method: 'POST',
+        const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
+        const method = taskId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assignee, name, sub, prio, items })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('task-form').reset();
-                document.getElementById('task-items-container').innerHTML = '';
-                const btn = e.target.querySelector('button[type="submit"]');
+                resetTaskForm();
+                const btn = document.getElementById('task-submit-btn');
                 const origText = btn.textContent;
-                btn.textContent = 'Assigned!';
+                btn.textContent = taskId ? 'Updated!' : 'Assigned!';
                 btn.style.background = 'var(--accent-saffron)';
                 setTimeout(() => {
                     btn.textContent = origText;

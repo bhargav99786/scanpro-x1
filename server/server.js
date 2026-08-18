@@ -155,6 +155,36 @@ app.post('/api/tasks', (req, res) => {
     res.json({ success: true, task: newTask });
 });
 
+app.put('/api/tasks/:id', (req, res) => {
+    const taskId = req.params.id;
+    const { assignee, name, sub, prio, items } = req.body;
+    if (!db.tasks) return res.status(404).json({ error: 'No tasks found' });
+    
+    const taskIndex = db.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return res.status(404).json({ error: 'Task not found' });
+    
+    const oldAssignee = db.tasks[taskIndex].assignee;
+    
+    db.tasks[taskIndex] = { ...db.tasks[taskIndex], assignee, name, sub, prio, items: items || [] };
+    saveData();
+    
+    // If assignee changed, clear tasks for old assignee
+    if (oldAssignee && oldAssignee !== assignee) {
+        publishTasksForAssignee(oldAssignee);
+    }
+    // Publish tasks for new assignee
+    publishTasksForAssignee(assignee);
+    
+    // Broadcast UI update
+    wss.clients.forEach(c => {
+        if (c.readyState === WebSocket.OPEN) {
+            c.send(JSON.stringify({ type: 'UPDATE_TASKS', data: db.tasks }));
+        }
+    });
+    
+    res.json({ success: true, task: db.tasks[taskIndex] });
+});
+
 app.delete('/api/tasks/:id', (req, res) => {
     const taskId = req.params.id;
     if (!db.tasks) return res.status(404).json({ error: 'No tasks found' });
