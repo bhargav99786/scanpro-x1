@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScanPro X1 — QR Badge Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+    :root {
+      --bg:       #070C1F;
+      --card:     #0D1535;
+      --border:   #1A2952;
+      --cyan:     #00D4FF;
+      --saffron:  #FF9933;
+      --mute:     #4A6080;
+      --white:    #E8F4FF;
+      --danger:   #FF3355;
+      --green:    #1D4ED8;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border: 1px solid var(--cyan);
+      border-radius: 20px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--cyan), var(--saffron));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: var(--mute);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* ── Stripe ─────────────────────────────────── */
+    .stripe {
+      width: 100%;
+      max-width: 700px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--saffron));
+      border-radius: 2px;
+      margin-bottom: 40px;
+    }
+
+    /* ── Main layout ─────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 700px;
+    }
+    @media (max-width: 600px) { .layout { grid-template-columns: 1fr; } }
+
+    /* ── Card ────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .card h2 {
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      flex-shrink: 0;
+    }
+
+    /* ── Form ─────────────────────────────────────── */
+    label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: #040812;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 15px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 16px;
+    }
+    input:focus { border-color: var(--cyan); }
+
+    .payload-preview {
+      background: #040812;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--saffron);
+      margin-bottom: 16px;
+      word-break: break-all;
+      min-height: 40px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), #0099CC);
+      color: #040812;
+    }
+    .btn-secondary {
+      background: var(--saffron);
+      color: #040812;
+      margin-top: 10px;
+    }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid var(--mute);
+      color: var(--mute);
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    /* ── QR Output ─────────────────────────────────── */
+    .qr-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      position: relative;
+    }
+
+    #qr-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 200px;
+      height: 200px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 16px;
+    }
+    #qr-container canvas, #qr-container img { border-radius: 4px; }
+
+    .qr-username {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    .qr-sub {
+      font-size: 11px;
+      color: var(--mute);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .placeholder-text {
+      color: var(--mute);
+      font-size: 13px;
+      text-align: center;
+    }
+    .placeholder-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.3;
+    }
+
+    /* ── Bulk section ──────────────────────────────── */
+    .bulk-section {
+      width: 100%;
+      max-width: 700px;
+      margin-top: 24px;
+    }
+
+    .bulk-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .bulk-card h2 {
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--saffron);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bulk-card h2 .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--saffron);
+      flex-shrink: 0;
+    }
+
+    textarea {
+      width: 100%;
+      background: #040812;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px;
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+    textarea:focus { border-color: var(--saffron); }
+
+    .bulk-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .bulk-item {
+      background: #040812;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+    }
+    .bulk-item .qr-wrap {
+      background: white;
+      padding: 6px;
+      border-radius: 6px;
+    }
+    .bulk-item .bu-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--white);
+    }
+    .bulk-item .bu-role {
+      font-size: 11px;
+      color: var(--mute);
+    }
+
+    /* ── Format tip ─────────────────────────────────── */
+    .format-tip {
+      width: 100%;
+      max-width: 700px;
+      margin-top: 24px;
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--mute);
+      line-height: 1.7;
+    }
+    .format-tip strong { color: var(--cyan); }
+    .format-tip code {
+      background: #040812;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--saffron);
+    }
+
+    /* ── Print ──────────────────────────────────────── */
+    @media print {
+      body { background: white; color: black; padding: 0; }
+      .no-print { display: none !important; }
+      .bulk-item { border: 1px solid #ccc; break-inside: avoid; }
+      .bulk-item .bu-name { color: black; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header no-print">
+    <div class="badge">ScanPro X1</div>
+    <h1>QR Badge Generator</h1>
+    <p>Generate user login QR codes for your warehouse scanner</p>
+  </div>
+  <div class="stripe no-print"></div>
+
+  <!-- ── Single badge ── -->
+  <div class="layout no-print">
+
+    <!-- Left: form -->
+    <div class="card">
+      <h2><span class="dot"></span>User Details</h2>
+
+      <label for="inp-user">Username / Employee ID</label>
+      <input id="inp-user" type="text" placeholder="e.g. bhargav" autocomplete="off" />
+
+      <label for="inp-pin">PIN</label>
+      <input id="inp-pin" type="password" placeholder="e.g. 1234" maxlength="16" autocomplete="new-password" />
+
+      <label>QR Payload Preview</label>
+      <div class="payload-preview" id="payload-preview">USER:&lt;username&gt;:&lt;pin&gt;</div>
+
+      <button class="btn btn-primary" onclick="generateSingle()">Generate QR Code</button>
+      <button class="btn btn-secondary" onclick="downloadQR()">⬇ Download PNG</button>
+    </div>
+
+    <!-- Right: QR output -->
+    <div class="qr-card" id="qr-output-card">
+      <div id="qr-placeholder">
+        <div class="placeholder-icon">⬛</div>
+        <p class="placeholder-text">Enter details and click<br><strong>Generate QR Code</strong></p>
+      </div>
+      <div id="qr-result" style="display:none; flex-direction:column; align-items:center;">
+        <div id="qr-container"></div>
+        <div class="qr-username" id="qr-label-name"></div>
+        <div class="qr-sub" id="qr-label-sub">Scan to login on ScanPro X1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bulk generator ── -->
+  <div class="bulk-section">
+    <div class="bulk-card">
+      <h2 class="no-print"><span class="dot"></span>Bulk Badge Generator</h2>
+      <div class="no-print">
+        <label>Paste users below — one per line: <code>username:pin</code></label>
+        <textarea id="bulk-input" placeholder="bhargav:1234
+john:5678
+worker01:1234
+manager:9999"></textarea>
+        <button class="btn btn-primary no-print" style="max-width:240px" onclick="generateBulk()">Generate All Badges</button>
+        <button class="btn btn-danger no-print" style="max-width:240px" onclick="window.print()">🖨 Print All Badges</button>
+      </div>
+      <div class="bulk-grid" id="bulk-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── Format tip ── -->
+  <div class="format-tip no-print">
+    <strong>QR Payload format:</strong>
+    &nbsp;<code>USER:&lt;username&gt;:&lt;pin&gt;</code><br>
+    Example: <code>USER:bhargav:1234</code><br><br>
+    The PIN must match <strong>DEFAULT_PASSWORD</strong> defined in <code>ui_screens.h</code> (default: <code>1234</code>).
+    To change the PIN for all badges, edit that one <code>#define</code> and recompile.
+  </div>
+
+<script>
+  let currentQRInstance = null;
+
+  function getPayload(user, pin) {
+    return `USER:${user.trim()}:${pin.trim()}`;
+  }
+
+  // Live preview
+  document.getElementById('inp-user').addEventListener('input', updatePreview);
+  document.getElementById('inp-pin').addEventListener('input', updatePreview);
+  function updatePreview() {
+    const u = document.getElementById('inp-user').value.trim();
+    const p = document.getElementById('inp-pin').value.trim();
+    const el = document.getElementById('payload-preview');
+    if (u || p) {
+      el.textContent = getPayload(u || '<username>', p || '<pin>');
+    } else {
+      el.textContent = 'USER:<username>:<pin>';
+    }
+  }
+
+  function generateSingle() {
+    const user = document.getElementById('inp-user').value.trim();
+    const pin  = document.getElementById('inp-pin').value.trim();
+
+    if (!user) { alert('Please enter a username.'); return; }
+    if (!pin)  { alert('Please enter a PIN.'); return; }
+
+    const payload = getPayload(user, pin);
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+
+    currentQRInstance = new QRCode(container, {
+      text: payload,
+      width: 180,
+      height: 180,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    document.getElementById('qr-label-name').textContent = user;
+    document.getElementById('qr-label-sub').textContent  = 'Scan to login · ScanPro X1';
+    document.getElementById('qr-placeholder').style.display = 'none';
+    document.getElementById('qr-result').style.display = 'flex';
+  }
+
+  function downloadQR() {
+    const container = document.getElementById('qr-container');
+    const canvas = container.querySelector('canvas');
+    if (!canvas) { alert('Generate a QR code first.'); return; }
+    const user = document.getElementById('inp-user').value.trim() || 'badge';
+    const link = document.createElement('a');
+    link.download = `qr_badge_${user}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  function generateBulk() {
+    const raw = document.getElementById('bulk-input').value.trim();
+    if (!raw) return;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l && l.includes(':'));
+    const grid = document.getElementById('bulk-grid');
+    grid.innerHTML = '';
+
+    lines.forEach(line => {
+      const idx = line.indexOf(':');
+      const user = line.substring(0, idx).trim();
+      const pin  = line.substring(idx + 1).trim();
+      if (!user || !pin) return;
+
+      const payload = getPayload(user, pin);
+
+      const item = document.createElement('div');
+      item.className = 'bulk-item';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'qr-wrap';
+
+      new QRCode(wrap, {
+        text: payload,
+        width: 110,
+        height: 110,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      const name = document.createElement('div');
+      name.className = 'bu-name';
+      name.textContent = user;
+
+      const role = document.createElement('div');
+      role.className = 'bu-role';
+      role.textContent = 'ScanPro X1 Badge';
+
+      item.appendChild(wrap);
+      item.appendChild(name);
+      item.appendChild(role);
+      grid.appendChild(item);
+    });
+  }
+</script>
+</body>
+</html>

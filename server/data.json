@@ -1,0 +1,40 @@
+{
+  "scans": [],
+  "inventory": {
+    "SKU-8901234567": {
+      "name": "Widget A",
+      "qty": 420
+    },
+    "SKU-8901234981": {
+      "name": "Widget B - steel",
+      "qty": 7
+    }
+  },
+  "active_devices": {
+    "scanpro-test-01": {
+      "user": "Operator 1",
+      "ts": 81561
+    }
+  },
+  "tasks": [],
+  "users": [
+    {
+      "id": "1",
+      "name": "Operator 1",
+      "role": "Warehouse Operator",
+      "pin": "1234"
+    },
+    {
+      "id": "admin",
+      "name": "System Admin",
+      "role": "Supervisor",
+      "pin": "1234"
+    },
+    {
+      "id": "001",
+      "name": "System Admin",
+      "role": "Supervisor",
+      "pin": "1234"
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanPro X1 - Command Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo"></div>
+                <h2>ScanPro X1</h2>
+                <span class="badge">Live</span>
+            </div>
+            <nav>
+                <button class="nav-item active" data-target="dashboard">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Live Scans
+                </button>
+                <button class="nav-item" data-target="inventory">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Inventory
+                </button>
+                <button class="nav-item" data-target="tasks">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Task Manager
+                </button>
+                <button class="nav-item" data-target="devices">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    Active Devices
+                </button>
+                <button class="nav-item" data-target="users">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Users & Roles
+                </button>
+            </nav>
+            <div class="connection-status">
+                <div class="status-indicator"></div>
+                <span id="ws-status">Connecting...</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Dashboard View -->
+            <section id="dashboard" class="view active">
+                <header>
+                    <h1>Real-Time Activity</h1>
+                    <p class="subtitle">Live barcode streaming from connected devices</p>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 class="stat-title">Total Scans</h3>
+                        <div class="stat-value" id="stat-total">0</div>
+                    </div>
+                    <div class="stat-card highlight">
+                        <h3 class="stat-title">Last Scanned SKU</h3>
+                        <div class="stat-value mono" id="stat-last-sku">--</div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Device ID</th>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>UUID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scan-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Inventory View -->
+            <section id="inventory" class="view">
+                <header>
+                    <h1>Inventory Management</h1>
+                    <p class="subtitle">Map barcodes to product names and track quantities</p>
+                </header>
+
+                <div class="inventory-layout">
+                    <div class="inventory-form-card">
+                        <h3>Add / Update Product</h3>
+                        <form id="inventory-form">
+                            <div class="form-group">
+                                <label for="sku">Barcode (SKU)</label>
+                                <input type="text" id="sku" placeholder="e.g. SKU-8901234567" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="name">Product Name</label>
+                                <input type="text" id="name" placeholder="e.g. Widget A" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="qty">Quantity</label>
+                                <input type="number" id="qty" value="0" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Save Product</button>
+                        </form>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Product Name</th>
+                                    <th>Stock Qty</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks View -->
+            <section id="tasks" class="view">
+                <header>
+                    <h1>Task Manager</h1>
+                    <p class="subtitle">Assign operational tasks directly to connected scanners</p>
+                </header>
+                <div class="inventory-layout">
+                    <div class="inventory-form-card">
+                        <h3>Create & Assign Task</h3>
+                        <form id="task-form">
+                            <div class="form-group">
+                                <label for="task-device">Assign To Device ID</label>
+                                <input type="text" id="task-device" value="scanpro-test-01" placeholder="e.g. scanpro-test-01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-name">Task Name</label>
+                                <input type="text" id="task-name" placeholder="e.g. Pick list #4521" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-sub">Subtext (Status/Progress)</label>
+                                <input type="text" id="task-sub" placeholder="e.g. Not started" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-prio">Priority</label>
+                                <input type="text" id="task-prio" placeholder="e.g. High" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Assign Task</button>
+                        </form>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Device ID</th>
+                                    <th>Task</th>
+                                    <th>Subtext</th>
+                                    <th>Priority</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="task-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Active Devices View -->
+            <div id="devices" class="view">
+                <header class="view-header">
+                    <h1>Active Devices & User Presence</h1>
+                    <p>Real-time online status and active user tracking across hardware scanners</p>
+                </header>
+                <div id="devices-grid" class="devices-grid">
+                    <!-- Dynamic Device Cards -->
+                </div>
+            </div>
+
+            <!-- Users & Roles View -->
+            <div id="users" class="view">
+                <header class="view-header">
+                    <h1>User Management & Roles</h1>
+                    <p>Manage authorized warehouse personnel, credentials, and access roles</p>
+                </header>
+                <div class="inventory-layout">
+                    <div class="inventory-form-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 id="user-form-title" style="margin: 0;">Create New User</h3>
+                            <button type="button" id="user-form-reset" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; border-radius: 4px; padding: 2px 8px; font-size: 0.8rem;">+ New User</button>
+                        </div>
+                        <form id="user-form">
+                            <div class="form-group">
+                                <label for="user-id">User ID (Login Username)</label>
+                                <input type="text" id="user-id" placeholder="e.g. 1 or USR-001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="user-name">Full Name</label>
+                                <input type="text" id="user-name" placeholder="e.g. Operator 1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="user-role">Role</label>
+                                <input type="text" id="user-role" value="Warehouse Operator" placeholder="e.g. Warehouse Operator" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="user-pin">PIN / Password</label>
+                                <input type="text" id="user-pin" value="1234" placeholder="e.g. 1234" required>
+                            </div>
+                            <button type="submit" id="user-submit-btn" class="btn-primary">Save User</button>
+                        </form>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>PIN</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body">
+                                <!-- Dynamic User Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

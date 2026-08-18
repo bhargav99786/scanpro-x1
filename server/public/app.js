@@ -1,0 +1,363 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Navigation Logic
+    const navItems = document.querySelectorAll('.nav-item');
+    const views = document.querySelectorAll('.view');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Update active nav
+            navItems.forEach(n => n.classList.remove('active'));
+            item.classList.add('active');
+
+            // Update active view
+            const targetId = item.getAttribute('data-target');
+            views.forEach(v => {
+                if (v.id === targetId) {
+                    v.classList.add('active');
+                } else {
+                    v.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Format Timestamp
+    function formatTime(ts) {
+        const date = new Date(ts);
+        return date.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second:'2-digit' }) + 
+               '.' + date.getMilliseconds().toString().padStart(3, '0');
+    }
+
+    // State
+    let totalScans = 0;
+
+    // WebSocket Connection
+    const ws = new WebSocket(`ws://${window.location.host}`);
+    const statusIndicator = document.querySelector('.status-indicator');
+    const wsStatusText = document.getElementById('ws-status');
+
+    ws.onopen = () => {
+        statusIndicator.classList.add('connected');
+        wsStatusText.textContent = 'Live Feed Active';
+    };
+
+    ws.onclose = () => {
+        statusIndicator.classList.remove('connected');
+        wsStatusText.textContent = 'Disconnected';
+    };
+
+    ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'NEW_SCAN') {
+            addScanToTable(message.data, true);
+            updateStats(message.data);
+        } else if (message.type === 'UPDATE_DEVICES') {
+            renderDevices(message.data);
+        } else if (message.type === 'UPDATE_TASKS') {
+            renderTasks(message.data);
+        } else if (message.type === 'UPDATE_USERS') {
+            renderUsers(message.data);
+        } else if (message.type === 'UPDATE_INVENTORY') {
+            renderInventory(message.data);
+        }
+    };
+
+    function renderDevices(devicesObj) {
+        const grid = document.getElementById('devices-grid');
+        grid.innerHTML = '';
+        Object.entries(devicesObj).forEach(([deviceId, info]) => {
+            const card = document.createElement('div');
+            card.className = 'stat-card highlight';
+            card.innerHTML = `
+                <h3 class="stat-title" style="color: var(--accent-cyan)">🟢 Online</h3>
+                <div class="stat-value mono" style="font-size: 1.2rem; margin-bottom: 8px">${deviceId}</div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem">User: <strong style="color: white">${info.user}</strong></div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    const taskTableBody = document.getElementById('task-table-body');
+    if (taskTableBody) {
+        taskTableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-task-btn');
+            if (btn) {
+                const taskId = btn.getAttribute('data-id');
+                fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) alert('Failed to delete task');
+                    })
+                    .catch(err => console.error('Delete error:', err));
+            }
+        });
+    }
+
+    function renderTasks(tasksArr) {
+        const tbody = document.getElementById('task-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        [...tasksArr].reverse().forEach(task => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="mono">${task.device_id}</td>
+                <td style="font-weight: 600">${task.name}</td>
+                <td style="color: var(--text-secondary)">${task.sub}</td>
+                <td><span class="badge" style="background: var(--accent-blue); color: white">${task.prio}</span></td>
+                <td><button class="delete-task-btn" data-id="${task.id}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderUsers(usersArr) {
+        const tbody = document.getElementById('user-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        usersArr.forEach(u => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="mono" style="font-weight: 600">${u.id}</td>
+                <td>${u.name}</td>
+                <td><span class="badge" style="background: var(--accent-cyan); color: white">${u.role || 'Operator'}</span></td>
+                <td class="mono">${u.pin || '1234'}</td>
+                <td>
+                    <button class="edit-user-btn" data-id="${u.id}" data-name="${u.name}" data-role="${u.role || 'Operator'}" data-pin="${u.pin || '1234'}" style="background: rgba(0,200,255,0.15); border: 1px solid var(--accent-cyan, #00c8ff); color: #00c8ff; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600; margin-right: 6px;">Modify</button>
+                    <button class="delete-user-btn" data-id="${u.id}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    const userTableBody = document.getElementById('user-table-body');
+    if (userTableBody) {
+        userTableBody.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-user-btn');
+            if (deleteBtn) {
+                const userId = deleteBtn.getAttribute('data-id');
+                fetch(`/api/users/${userId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) alert('Failed to delete user');
+                    });
+                return;
+            }
+
+            const editBtn = e.target.closest('.edit-user-btn');
+            if (editBtn) {
+                document.getElementById('user-id').value = editBtn.getAttribute('data-id');
+                document.getElementById('user-name').value = editBtn.getAttribute('data-name');
+                document.getElementById('user-role').value = editBtn.getAttribute('data-role');
+                document.getElementById('user-pin').value = editBtn.getAttribute('data-pin');
+                
+                const title = document.getElementById('user-form-title');
+                if (title) title.textContent = `Modify User (${editBtn.getAttribute('data-id')})`;
+                const btn = document.getElementById('user-submit-btn');
+                if (btn) btn.textContent = 'Update User';
+            }
+        });
+    }
+
+    const userResetBtn = document.getElementById('user-form-reset');
+    if (userResetBtn) {
+        userResetBtn.addEventListener('click', () => {
+            document.getElementById('user-form').reset();
+            const title = document.getElementById('user-form-title');
+            if (title) title.textContent = 'Create New User';
+            const btn = document.getElementById('user-submit-btn');
+            if (btn) btn.textContent = 'Save User';
+        });
+    }
+
+    // Fetch initial devices, tasks, users
+    fetch('/api/devices').then(r => r.json()).then(renderDevices);
+    fetch('/api/tasks').then(r => r.json()).then(renderTasks);
+    fetch('/api/users').then(r => r.json()).then(renderUsers);
+
+    // Fetch initial scans
+    fetch('/api/scans')
+        .then(res => res.json())
+        .then(data => {
+            totalScans = data.length;
+            document.getElementById('stat-total').textContent = totalScans;
+            if (data.length > 0) {
+                document.getElementById('stat-last-sku').textContent = data[0].sku;
+                // Since data is ordered DESC, we can just append them
+                data.forEach(scan => addScanToTable(scan, false));
+            }
+        });
+
+    // Fetch initial inventory
+    function loadInventory() {
+        fetch('/api/inventory')
+            .then(res => res.json())
+            .then(renderInventory);
+    }
+    loadInventory();
+
+    function renderInventory(data) {
+        const tbody = document.getElementById('inventory-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="mono" style="font-weight: 600">${item.sku}</td>
+                <td>${item.name}</td>
+                <td><span class="badge" style="background: var(--accent-cyan); color: white">${item.qty}</span></td>
+                <td>
+                    <button class="edit-inv-btn" data-sku="${item.sku}" data-name="${item.name}" data-qty="${item.qty}" style="background: rgba(0,200,255,0.15); border: 1px solid var(--accent-cyan, #00c8ff); color: #00c8ff; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600; margin-right: 6px;">Modify</button>
+                    <button class="delete-inv-btn" data-sku="${item.sku}" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger, #ff3355); color: #ff3355; cursor: pointer; border-radius: 4px; padding: 4px 10px; font-weight: 600;">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    const inventoryTableBody = document.getElementById('inventory-table-body');
+    if (inventoryTableBody) {
+        inventoryTableBody.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.delete-inv-btn');
+            if (deleteBtn) {
+                const sku = deleteBtn.getAttribute('data-sku');
+                fetch(`/api/inventory/${sku}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) alert('Failed to delete item');
+                    });
+                return;
+            }
+
+            const editBtn = e.target.closest('.edit-inv-btn');
+            if (editBtn) {
+                document.getElementById('sku').value = editBtn.getAttribute('data-sku');
+                document.getElementById('name').value = editBtn.getAttribute('data-name');
+                document.getElementById('qty').value = editBtn.getAttribute('data-qty');
+                
+                const btn = document.querySelector('#inventory-form button[type="submit"]');
+                if (btn) btn.textContent = 'Update Product';
+            }
+        });
+    }
+
+    function addScanToTable(scan, animate) {
+        const tbody = document.getElementById('scan-table-body');
+        const tr = document.createElement('tr');
+        if (animate) tr.classList.add('new-row');
+        
+        tr.innerHTML = `
+            <td class="mono">${formatTime(scan.ts)}</td>
+            <td class="mono">${scan.device_id}</td>
+            <td class="mono" style="color: var(--accent-cyan); font-weight: 600;">${scan.sku}</td>
+            <td>${scan.product_name || 'Unknown Product'}</td>
+            <td class="mono" style="color: var(--text-secondary); font-size: 0.8rem;">${scan.uuid}</td>
+        `;
+        
+        tbody.insertBefore(tr, tbody.firstChild);
+
+        // Keep table size manageable
+        if (tbody.children.length > 100) {
+            tbody.removeChild(tbody.lastChild);
+        }
+    }
+
+    function updateStats(scan) {
+        totalScans++;
+        document.getElementById('stat-total').textContent = totalScans;
+        document.getElementById('stat-last-sku').textContent = scan.sku;
+    }
+
+    // Inventory Form Submit
+    document.getElementById('inventory-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const sku = document.getElementById('sku').value;
+        const name = document.getElementById('name').value;
+        const qty = parseInt(document.getElementById('qty').value) || 0;
+
+        fetch('/api/inventory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sku, name, qty })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Reset form
+                document.getElementById('inventory-form').reset();
+                
+                // Show a quick success visual
+                const btn = e.target.querySelector('button');
+                const origText = btn.textContent;
+                btn.textContent = 'Saved!';
+                btn.style.background = 'var(--accent-saffron)';
+                setTimeout(() => {
+                    btn.textContent = 'Save Product';
+                    btn.style.background = '';
+                }, 1500);
+            }
+        });
+    });
+
+    // Task Form Submit
+    document.getElementById('task-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const device_id = document.getElementById('task-device').value;
+        const name = document.getElementById('task-name').value;
+        const sub = document.getElementById('task-sub').value;
+        const prio = document.getElementById('task-prio').value;
+
+        fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id, name, sub, prio })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('task-form').reset();
+                const btn = e.target.querySelector('button');
+                const origText = btn.textContent;
+                btn.textContent = 'Assigned!';
+                btn.style.background = 'var(--accent-saffron)';
+                setTimeout(() => {
+                    btn.textContent = origText;
+                    btn.style.background = '';
+                }, 1500);
+            }
+        });
+    });
+
+    // User Form Submit
+    const userForm = document.getElementById('user-form');
+    if (userForm) {
+        userForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('user-id').value;
+            const name = document.getElementById('user-name').value;
+            const role = document.getElementById('user-role').value;
+            const pin = document.getElementById('user-pin').value;
+
+            fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, name, role, pin })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const btn = e.target.querySelector('button[type="submit"]');
+                    const origText = btn.textContent;
+                    btn.textContent = 'Saved!';
+                    btn.style.background = 'var(--accent-saffron)';
+                    setTimeout(() => {
+                        btn.textContent = 'Save User';
+                        btn.style.background = '';
+                        const title = document.getElementById('user-form-title');
+                        if (title) title.textContent = 'Create New User';
+                    }, 1500);
+                }
+            });
+        });
+    }
+});
