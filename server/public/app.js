@@ -80,22 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const taskTableBody = document.getElementById('task-table-body');
-    if (taskTableBody) {
-        taskTableBody.addEventListener('click', (e) => {
-            const btn = e.target.closest('.delete-task-btn');
-            if (btn) {
-                const taskId = btn.getAttribute('data-id');
-                fetch(`/api/tasks/${taskId}`, { method: 'DELETE' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (!data.success) alert('Failed to delete task');
-                    })
-                    .catch(err => console.error('Delete error:', err));
-            }
-        });
-    }
-
     function renderTasks(tasksArr) {
         cachedTasks = tasksArr;
         const tbody = document.getElementById('task-table-body');
