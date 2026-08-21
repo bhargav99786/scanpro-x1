@@ -216,8 +216,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         static std::string current_topic;
         static std::string current_payload;
 
-        if (event->topic_len > 0) {
-            current_topic = std::string(event->topic, event->topic_len);
+        if (event->current_data_offset == 0) {
+            if (event->topic_len > 0) {
+                current_topic = std::string(event->topic, event->topic_len);
+            }
             current_payload.clear();
         }
 

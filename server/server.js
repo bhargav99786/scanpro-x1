@@ -128,27 +128,56 @@ app.get('/api/tasks', (req, res) => {
     res.json(db.tasks || []);
 });
 
-function publishTasksForAssignee(assignee) {
+function publishTasksForDevice(deviceId) {
+    const activeDev = (db.active_devices || {})[deviceId];
+    const devUser = activeDev ? activeDev.user : 'No Login';
+
+    // Find matching user object by name or ID (case-insensitive)
+    const userObj = (db.users || []).find(u => 
+        (u.name && devUser && u.name.trim().toLowerCase() === devUser.trim().toLowerCase()) ||
+        (u.id && devUser && u.id.trim().toLowerCase() === devUser.trim().toLowerCase())
+    );
+    const userId = userObj ? userObj.id : null;
+    const userName = userObj ? userObj.name : null;
+
+    const userTasks = (db.tasks || []).filter(t => {
+        if (!t.assignee) return false;
+        const ass = t.assignee.trim().toLowerCase();
+        if (ass === 'all') return true;
+        if (deviceId && ass === deviceId.toLowerCase()) return true;
+        if (devUser && devUser !== 'No Login' && ass === devUser.toLowerCase()) return true;
+        if (userId && ass === userId.toLowerCase()) return true;
+        if (userName && ass === userName.toLowerCase()) return true;
+        return false;
+    });
+
+    console.log(`[MQTT] Publishing ${userTasks.length} tasks to device/${deviceId}/tasks (user: '${devUser}')`);
+    mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
+}
+
+function publishAllDeviceTasks(specificAssignee = null) {
     const activeDevices = db.active_devices || {};
-    
-    for (const [deviceId, data] of Object.entries(activeDevices)) {
-        const devUser = data.user;
-        const userObj = db.users ? db.users.find(u => u.name === devUser || u.id === devUser) : null;
-        const userId = userObj ? userObj.id : null;
+    const devIds = Object.keys(activeDevices);
 
-        const isMatch = (devUser === assignee) || (userId === assignee) || (deviceId === assignee);
+    // Always publish to active devices
+    devIds.forEach(id => publishTasksForDevice(id));
 
-        if (isMatch) {
-            const userTasks = (db.tasks || []).filter(t => 
-                t.assignee === assignee || 
-                t.assignee === devUser || 
-                (userId && t.assignee === userId) || 
-                t.assignee === deviceId
-            );
-            console.log(`[MQTT] Publishing ${userTasks.length} tasks to device/${deviceId}/tasks for assignee '${assignee}' (user: '${devUser}')`);
-            mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
+    // Also publish directly to specific target device if specified or if default device exists
+    const targetSet = new Set(['scanpro-test-01']);
+    if (specificAssignee) targetSet.add(specificAssignee);
+    (db.tasks || []).forEach(t => {
+        if (t.assignee && t.assignee !== 'all') targetSet.add(t.assignee);
+    });
+
+    targetSet.forEach(targetId => {
+        if (!activeDevices[targetId]) {
+            publishTasksForDevice(targetId);
         }
-    }
+    });
+}
+
+function publishTasksForAssignee(assignee) {
+    publishAllDeviceTasks(assignee);
 }
 
 app.post('/api/tasks', (req, res) => {
@@ -160,8 +189,8 @@ app.post('/api/tasks', (req, res) => {
     db.tasks.push(newTask);
     saveData();
     
-    // Publish the updated tasks list to any devices the assignee is using
-    publishTasksForAssignee(assignee);
+    // Publish the updated tasks list to all devices in real-time
+    publishAllDeviceTasks(assignee);
     
     // Broadcast UI update
     wss.clients.forEach(c => {
@@ -186,12 +215,11 @@ app.put('/api/tasks/:id', (req, res) => {
     db.tasks[taskIndex] = { ...db.tasks[taskIndex], assignee, name, prio, items: items || [] };
     saveData();
     
-    // If assignee changed, clear tasks for old assignee
+    // Publish updated tasks to all devices in real-time
+    publishAllDeviceTasks(assignee);
     if (oldAssignee && oldAssignee !== assignee) {
-        publishTasksForAssignee(oldAssignee);
+        publishAllDeviceTasks(oldAssignee);
     }
-    // Publish tasks for new assignee
-    publishTasksForAssignee(assignee);
     
     // Broadcast UI update
     wss.clients.forEach(c => {
@@ -214,8 +242,8 @@ app.delete('/api/tasks/:id', (req, res) => {
     db.tasks.splice(taskIndex, 1);
     saveData();
     
-    // Publish updated tasks to any devices the assignee is using
-    publishTasksForAssignee(assignee);
+    // Publish updated tasks to all devices in real-time
+    publishAllDeviceTasks(assignee);
     
     // Broadcast UI update
     wss.clients.forEach(c => {
@@ -493,14 +521,10 @@ mqttClient.on('message', (topic, message) => {
                     }
                 }
                 db.active_devices[deviceId] = { user: displayUser, status: 'online', ts: payload.ts || Date.now() };
-                if (!isNoLogin) {
-                    publishTasksForAssignee(newUser);
-                } else {
-                    mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify([]), { retain: true });
-                }
+                publishTasksForDevice(deviceId);
             } else {
                 delete db.active_devices[deviceId];
-                mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify([]), { retain: true });
+                publishTasksForDevice(deviceId);
             }
             saveData();
             
