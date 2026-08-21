@@ -346,3 +346,111 @@ header h1 {
     background: #2563eb;
     box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
+
+.hidden {
+    display: none !important;
+}
+
+/* Help Tag */
+.help-tag {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent-cyan);
+    color: var(--bg-dark);
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    transition: transform 0.2s;
+}
+
+.help-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 212, 255, 0.4);
+}
+
+/* Help Box / Intercom Widget */
+.help-box {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 300px;
+    background: rgba(8, 15, 37, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.help-box-header {
+    background: rgba(0, 212, 255, 0.1);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+.help-box-header span {
+    flex: 1;
+}
+
+.help-box-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.intercom-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    min-height: 20px;
+}
+
+.ptt-button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent-saffron);
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ptt-button:active:not(:disabled) {
+    background: #cc7a29;
+    transform: scale(0.98);
+}
+
+.ptt-button:disabled {
+    background: #4A6080;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.ptt-button.recording {
+    background: var(--accent-danger);
+    animation: pulse-danger 1.5s infinite;
+}
+
+@keyframes pulse-danger {
+    0% { box-shadow: 0 0 0 0 rgba(255, 51, 85, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 51, 85, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 51, 85, 0); }
+}

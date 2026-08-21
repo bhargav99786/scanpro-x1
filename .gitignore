@@ -1,1 +1,10 @@
 node_modules/
+build/
+**/build/
+*.bin
+*.elf
+*.map
+.vscode/
+server/cert.pem
+server/key.pem
+*.zip

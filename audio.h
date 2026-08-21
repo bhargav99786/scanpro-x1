@@ -87,7 +87,10 @@ inline bool audioInit()
         return false;
     }
     es8311_voice_volume_set(_es_handle, AUDIO_VOLUME, NULL);
-    es8311_microphone_config(_es_handle, false);
+    es8311_voice_mute(_es_handle, false); // Explicitly un-mute DAC output hardware registers!
+    // The Waveshare board uses an Analog Microphone, not a Digital one!
+    es8311_microphone_config(_es_handle, false); 
+    es8311_microphone_gain_set(_es_handle, ES8311_MIC_GAIN_30DB); // Set gain to 30dB for clear voice capture
     Serial.printf("[AUDIO] ES8311 OK — volume %d%%\n", AUDIO_VOLUME);
 
     // ── I2S ──────────────────────────────────────────────────────────────────
@@ -102,6 +105,10 @@ inline bool audioInit()
         return false;
     }
     Serial.println("[AUDIO] I2S OK");
+
+    // Enable Onboard Speaker Power Amplifier (GPIO17 as per schematic)
+    pinMode(PA_CTRL_PIN, OUTPUT);
+    digitalWrite(PA_CTRL_PIN, HIGH);
 
     _audio_ready = true;
     return true;
@@ -127,3 +134,21 @@ inline void beepStartup()
     _playBeep(1200, 60); delay(40);
     _playBeep(1600, 80);
 }
+
+// ── Intercom / Walkie-Talkie Functions ───────────────────────────────────────
+
+// Read a chunk of raw 16-bit PCM data from the microphone
+inline size_t audioRecordChunk(uint8_t *buffer, size_t buffer_size)
+{
+    if (!_audio_ready) return 0;
+    // Read from I2S DMA into buffer. Returns number of bytes read.
+    return _i2s.readBytes((char *)buffer, buffer_size);
+}
+
+// Play a chunk of raw 16-bit PCM data received from the network
+inline void audioPlayChunk(const uint8_t *buffer, size_t buffer_size)
+{
+    if (!_audio_ready) return;
+    _i2s.write((uint8_t *)buffer, buffer_size);
+}
+

@@ -64,6 +64,7 @@ struct TaskDef {
   char id[32];
   char name[32]; 
   char prio[16]; 
+  char status[16];
   lv_color_t prio_color;
   int item_count;
   TaskItem items[MAX_ITEMS_PER_TASK];
@@ -126,6 +127,7 @@ static void task_row_event_cb(lv_event_t *e);
 static void task_detail_back_cb(lv_event_t *e);
 extern void devicePowerOff();
 inline void uiSetWifiStatus(const String &text);
+static lv_obj_t *global_kb = NULL;
 
 static void _logout_action_cb(lv_event_t *e) {
   lv_event_code_t code = lv_event_get_code(e);
@@ -140,8 +142,7 @@ static void _logout_action_cb(lv_event_t *e) {
       lv_label_set_text(label_login_qr_status, LV_SYMBOL_BARS "  Scan QR badge to login");
       lv_obj_set_style_text_color(label_login_qr_status, COLOR_CYAN, 0);
     }
-    if (scr_login) lv_scr_load_anim(scr_login, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
-    if (status_title_label) lv_label_set_text(status_title_label, "");
+    if (scr_login) _load_scr_direct(scr_login, "");
   }
 }
 
@@ -671,19 +672,33 @@ static lv_obj_t *wcard_inputs = NULL;
 static lv_obj_t *ble_active_panel = NULL;
 static lv_obj_t *label_ble_large_status = NULL;
 static lv_obj_t *wcard_ref = NULL;
-static lv_obj_t *kb_shared = NULL;
+static void _kb_event_cb(lv_event_t *e) {
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code == LV_EVENT_READY || code == LV_EVENT_CANCEL) {
+    if (global_kb) {
+      lv_obj_add_flag(global_kb, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
+}
 
 static void _ta_event_cb(lv_event_t *e) {
   lv_event_code_t code = lv_event_get_code(e);
   lv_obj_t *ta = lv_event_get_target(e);
-  if (!kb_shared) return;
 
   if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED) {
-    lv_keyboard_set_textarea(kb_shared, ta);
-    lv_obj_clear_flag(kb_shared, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_foreground(kb_shared);
-  } else if (code == LV_EVENT_DEFOCUSED || code == LV_EVENT_READY) {
-    lv_obj_add_flag(kb_shared, LV_OBJ_FLAG_HIDDEN);
+    if (!global_kb) {
+      global_kb = lv_keyboard_create(lv_layer_top());
+      lv_obj_set_size(global_kb, 480, 150);
+      lv_obj_align(global_kb, LV_ALIGN_BOTTOM_MID, 0, 0);
+      lv_obj_add_event_cb(global_kb, _kb_event_cb, LV_EVENT_ALL, NULL);
+    }
+    lv_keyboard_set_textarea(global_kb, ta);
+    lv_obj_clear_flag(global_kb, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(global_kb);
+  } else if (code == LV_EVENT_DEFOCUSED) {
+    if (global_kb) {
+      lv_obj_add_flag(global_kb, LV_OBJ_FLAG_HIDDEN);
+    }
   }
 }
 
@@ -713,7 +728,9 @@ static void _ble_toggle_btn_cb(lv_event_t *e) {
 static void _landscape_switch_cb(lv_event_t *e) {
   lv_obj_t *sw = lv_event_get_target(e);
   bool is_right = lv_obj_has_state(sw, LV_STATE_CHECKED);
-  saveScreenRotation(is_right ? 3 : 1);
+  #if defined(ESP_PLATFORM)
+  display_port_set_rotation(is_right ? 2 : 0); // 0 = Normal Landscape (480x320), 2 = Flipped Landscape (480x320)
+  #endif
 }
 
 static void _mode_switch_cb(lv_event_t *e) {
@@ -1095,27 +1112,73 @@ static void _numpad_event_cb(lv_event_t *e) {
 
 static void build_login_screen() {
   scr_login = lv_obj_create(NULL);
+  lv_obj_set_size(scr_login, 480, 320);
   lv_obj_set_style_bg_color(scr_login, lv_color_hex(0x040812), 0);
+  lv_obj_set_style_bg_opa(scr_login, LV_OPA_COVER, 0);
 
-  // ── LEFT PANEL: ID & Password Inputs ──────────────────────────────────────
+  // ── LEFT PANEL: Permanent Number Board (Keypad) ──────────────────────────
   lv_obj_t *left_panel = lv_obj_create(scr_login);
-  lv_obj_set_size(left_panel, 230, 260);
+  lv_obj_set_size(left_panel, 226, 260);
   lv_obj_align(left_panel, LV_ALIGN_TOP_LEFT, 8, 48);
   lv_obj_set_style_bg_color(left_panel, lv_color_hex(0x080F25), 0);
+  lv_obj_set_style_bg_opa(left_panel, LV_OPA_COVER, 0);
   lv_obj_set_style_border_color(left_panel, COLOR_CYAN, 0);
   lv_obj_set_style_border_width(left_panel, 1, 0);
   lv_obj_set_style_radius(left_panel, 10, 0);
-  lv_obj_set_style_pad_all(left_panel, 10, 0);
+  lv_obj_set_style_pad_all(left_panel, 6, 0);
   lv_obj_clear_flag(left_panel, LV_OBJ_FLAG_SCROLLABLE);
 
+  lv_obj_t *num_hdr = lv_label_create(left_panel);
+  lv_label_set_text(num_hdr, "NUMBER BOARD");
+  lv_obj_set_style_text_color(num_hdr, COLOR_CYAN, 0);
+  lv_obj_set_style_text_font(num_hdr, &lv_font_montserrat_12, 0);
+  lv_obj_align(num_hdr, LV_ALIGN_TOP_MID, 0, 2);
+
+  static const char * numpad_map[] = {
+    "1", "2", "3", "\n",
+    "4", "5", "6", "\n",
+    "7", "8", "9", "\n",
+    "Clr", "0", LV_SYMBOL_BACKSPACE, ""
+  };
+
+  lv_obj_t *btnm = lv_btnmatrix_create(left_panel);
+  lv_btnmatrix_set_map(btnm, numpad_map);
+  lv_obj_set_size(btnm, 210, 220);
+  lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x040812), 0);
+  lv_obj_set_style_border_width(btnm, 0, 0);
+  lv_obj_set_style_radius(btnm, 8, 0);
+
+  // Button matrix styling: dark cyber buttons with cyan text
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x0D1535), LV_PART_ITEMS);
+  lv_obj_set_style_text_color(btnm, COLOR_CYAN, LV_PART_ITEMS);
+  lv_obj_set_style_text_font(btnm, &lv_font_montserrat_14, LV_PART_ITEMS);
+  lv_obj_set_style_border_color(btnm, lv_color_hex(0x1A2952), LV_PART_ITEMS);
+  lv_obj_set_style_border_width(btnm, 1, LV_PART_ITEMS);
+  lv_obj_set_style_radius(btnm, 6, LV_PART_ITEMS);
+
+  lv_obj_add_event_cb(btnm, _numpad_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+  // ── RIGHT PANEL: ID & Password Inputs ─────────────────────────────────────
+  lv_obj_t *right_panel = lv_obj_create(scr_login);
+  lv_obj_set_size(right_panel, 230, 260);
+  lv_obj_align(right_panel, LV_ALIGN_TOP_RIGHT, -8, 48);
+  lv_obj_set_style_bg_color(right_panel, lv_color_hex(0x080F25), 0);
+  lv_obj_set_style_bg_opa(right_panel, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_color(right_panel, COLOR_CYAN, 0);
+  lv_obj_set_style_border_width(right_panel, 1, 0);
+  lv_obj_set_style_radius(right_panel, 10, 0);
+  lv_obj_set_style_pad_all(right_panel, 10, 0);
+  lv_obj_clear_flag(right_panel, LV_OBJ_FLAG_SCROLLABLE);
+
   // User ID field
-  lv_obj_t *ul = lv_label_create(left_panel);
+  lv_obj_t *ul = lv_label_create(right_panel);
   lv_label_set_text(ul, "USER ID");
   lv_obj_set_style_text_color(ul, COLOR_MUTE, 0);
   lv_obj_set_style_text_font(ul, &lv_font_montserrat_12, 0);
   lv_obj_align(ul, LV_ALIGN_TOP_LEFT, 0, 0);
 
-  ta_login_user = _make_cyber_ta(left_panel);
+  ta_login_user = _make_cyber_ta(right_panel);
   lv_textarea_set_placeholder_text(ta_login_user, "User ID");
   lv_textarea_set_text(ta_login_user, "1");
   lv_textarea_set_one_line(ta_login_user, true);
@@ -1126,13 +1189,13 @@ static void build_login_screen() {
   lv_obj_set_style_border_color(ta_login_user, COLOR_CYAN, 0);
 
   // Password field
-  lv_obj_t *pl = lv_label_create(left_panel);
+  lv_obj_t *pl = lv_label_create(right_panel);
   lv_label_set_text(pl, "PASSWORD");
   lv_obj_set_style_text_color(pl, COLOR_MUTE, 0);
   lv_obj_set_style_text_font(pl, &lv_font_montserrat_12, 0);
   lv_obj_align(pl, LV_ALIGN_TOP_LEFT, 0, 60);
 
-  ta_login_pass = _make_cyber_ta(left_panel);
+  ta_login_pass = _make_cyber_ta(right_panel);
   lv_textarea_set_placeholder_text(ta_login_pass, "Password");
   lv_textarea_set_password_mode(ta_login_pass, true);
   lv_textarea_set_one_line(ta_login_pass, true);
@@ -1141,7 +1204,7 @@ static void build_login_screen() {
   lv_obj_add_event_cb(ta_login_pass, _login_ta_event_cb, LV_EVENT_ALL, NULL);
 
   // Eye toggle button
-  lv_obj_t *eye_btn = lv_btn_create(left_panel);
+  lv_obj_t *eye_btn = lv_btn_create(right_panel);
   lv_obj_set_size(eye_btn, 38, 36);
   lv_obj_align(eye_btn, LV_ALIGN_TOP_LEFT, 170, 78);
   lv_obj_set_style_bg_color(eye_btn, lv_color_hex(0x0D1535), 0);
@@ -1161,7 +1224,7 @@ static void build_login_screen() {
   }, LV_EVENT_CLICKED, eye_lbl);
 
   // Error label
-  label_login_err = lv_label_create(left_panel);
+  label_login_err = lv_label_create(right_panel);
   lv_label_set_text(label_login_err, "");
   lv_obj_set_style_text_color(label_login_err, COLOR_DANGER, 0);
   lv_obj_set_style_text_font(label_login_err, &lv_font_montserrat_12, 0);
@@ -1169,7 +1232,7 @@ static void build_login_screen() {
 
   // ── QR Badge scan alternative ──────────────────────────────────────────
 
-  lv_obj_t *qr_hint = lv_label_create(left_panel);
+  lv_obj_t *qr_hint = lv_label_create(right_panel);
   lv_label_set_text(qr_hint, LV_SYMBOL_BARS "  Scan QR badge to login");
   lv_obj_set_style_text_color(qr_hint, COLOR_CYAN, 0);
   lv_obj_set_style_text_font(qr_hint, &lv_font_montserrat_12, 0);
@@ -1179,7 +1242,7 @@ static void build_login_screen() {
   label_login_qr_status = qr_hint; // Reuse this label for live feedback
 
   // Authenticate button
-  lv_obj_t *btn_login = lv_btn_create(left_panel);
+  lv_obj_t *btn_login = lv_btn_create(right_panel);
   lv_obj_set_size(btn_login, 208, 40);
   lv_obj_align(btn_login, LV_ALIGN_BOTTOM_MID, 0, 0);
   lv_obj_set_style_bg_color(btn_login, COLOR_SAFFRON, 0);
@@ -1221,8 +1284,7 @@ static void build_login_screen() {
       lv_textarea_set_text(ta_login_pass, "");
       lv_textarea_set_password_mode(ta_login_pass, true);
       if (label_login_err) lv_label_set_text(label_login_err, "");
-      lv_scr_load(scr_home);
-      if (status_title_label) lv_label_set_text(status_title_label, "Home");
+      _load_scr_direct(scr_home, "Home");
     } else {
       if (!found) {
         if (label_login_err) lv_label_set_text(label_login_err, "! User ID not found");
@@ -1231,48 +1293,6 @@ static void build_login_screen() {
       }
     }
   }, LV_EVENT_CLICKED, NULL);
-
-  // ── RIGHT PANEL: Permanent Number Board (Keypad) ──────────────────────────
-  lv_obj_t *right_panel = lv_obj_create(scr_login);
-  lv_obj_set_size(right_panel, 226, 274);
-  lv_obj_align(right_panel, LV_ALIGN_TOP_RIGHT, -8, 38);
-  lv_obj_set_style_bg_color(right_panel, lv_color_hex(0x080F25), 0);
-  lv_obj_set_style_border_color(right_panel, COLOR_CYAN, 0);
-  lv_obj_set_style_border_width(right_panel, 1, 0);
-  lv_obj_set_style_radius(right_panel, 10, 0);
-  lv_obj_set_style_pad_all(right_panel, 6, 0);
-  lv_obj_clear_flag(right_panel, LV_OBJ_FLAG_SCROLLABLE);
-
-  lv_obj_t *num_hdr = lv_label_create(right_panel);
-  lv_label_set_text(num_hdr, "NUMBER BOARD");
-  lv_obj_set_style_text_color(num_hdr, COLOR_CYAN, 0);
-  lv_obj_set_style_text_font(num_hdr, &lv_font_montserrat_12, 0);
-  lv_obj_align(num_hdr, LV_ALIGN_TOP_MID, 0, 2);
-
-  static const char * numpad_map[] = {
-    "1", "2", "3", "\n",
-    "4", "5", "6", "\n",
-    "7", "8", "9", "\n",
-    "Clr", "0", LV_SYMBOL_BACKSPACE, ""
-  };
-
-  lv_obj_t *btnm = lv_btnmatrix_create(right_panel);
-  lv_btnmatrix_set_map(btnm, numpad_map);
-  lv_obj_set_size(btnm, 210, 240);
-  lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
-  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x040812), 0);
-  lv_obj_set_style_border_width(btnm, 0, 0);
-  lv_obj_set_style_radius(btnm, 8, 0);
-
-  // Button matrix styling: dark cyber buttons with cyan text
-  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x0D1535), LV_PART_ITEMS);
-  lv_obj_set_style_text_color(btnm, COLOR_CYAN, LV_PART_ITEMS);
-  lv_obj_set_style_text_font(btnm, &lv_font_montserrat_14, LV_PART_ITEMS);
-  lv_obj_set_style_border_color(btnm, lv_color_hex(0x1A2952), LV_PART_ITEMS);
-  lv_obj_set_style_border_width(btnm, 1, LV_PART_ITEMS);
-  lv_obj_set_style_radius(btnm, 6, LV_PART_ITEMS);
-
-  lv_obj_add_event_cb(btnm, _numpad_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
 // ============================================================================
@@ -1280,6 +1300,9 @@ static void build_login_screen() {
 // ============================================================================
 static void _load_scr_direct(lv_obj_t *target, const char *title) {
   if (!target) return;
+  if (global_kb) {
+    lv_obj_add_flag(global_kb, LV_OBJ_FLAG_HIDDEN);
+  }
   lv_scr_load_anim(target, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
   if (status_title_label) lv_label_set_text(status_title_label, title ? title : "");
 }
@@ -1299,11 +1322,6 @@ static void nav_settings_cb(lv_event_t *e)   { if (!is_logged_in) { nav_login_cb
 inline void uiInit() {
   // Create the global persistent status bar FIRST so battery/wifi labels exist
   create_global_status_bar();
-
-  kb_shared = lv_keyboard_create(lv_layer_top());
-  lv_obj_set_size(kb_shared, 480, 130);
-  lv_obj_align(kb_shared, LV_ALIGN_BOTTOM_MID, 0, 0);
-  lv_obj_add_flag(kb_shared, LV_OBJ_FLAG_HIDDEN);
 
   build_login_screen();
   build_home_screen();

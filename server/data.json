@@ -1,56 +1,227 @@
 {
-  "scans": [],
+  "scans": [
+    {
+      "device_id": "scanpro-test-01",
+      "sku": "8904089326728",
+      "ts": 202635,
+      "product_name": "Unknown Product"
+    }
+  ],
   "inventory": {
     "SKU-8901234567": {
       "name": "Widget A",
-      "qty": 420
+      "qty": 42
     },
     "SKU-8901234981": {
       "name": "Widget B - steel",
       "qty": 7
+    },
+    "SKU-8901235120": {
+      "name": "Bracket set",
+      "qty": 0
     }
   },
   "active_devices": {
     "scanpro-test-01": {
-      "user": "Operator 1",
-      "ts": 213763
+      "user": "Operator 123",
+      "status": "online",
+      "ts": 32543
     }
   },
-  "tasks": [
-    {
-      "id": "1787058285351",
-      "assignee": "Operator 1",
-      "name": "1",
-      "sub": "2",
-      "prio": "high",
-      "items": [
-        {
-          "sku": "SKU-8901234567",
-          "name": "Widget A",
-          "target_qty": 1,
-          "picked_qty": 0
-        }
-      ]
-    }
-  ],
+  "tasks": [],
   "users": [
     {
-      "id": "1",
-      "name": "Operator 1",
+      "id": "11",
+      "name": "avvv",
       "role": "Warehouse Operator",
       "pin": "1234"
-    },
-    {
-      "id": "admin",
-      "name": "System Admin",
-      "role": "Supervisor",
-      "pin": "1234"
-    },
-    {
-      "id": "001",
-      "name": "System Admin",
-      "role": "Supervisor",
-      "pin": "1234"
     }
-  ]
+  ],
+  "attendance_logs": [
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787228274320,
+      "logoutTime": 1787228350821,
+      "durationMs": 76501,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787228801860,
+      "logoutTime": 1787229758640,
+      "durationMs": 956780,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787229767176,
+      "logoutTime": 1787229769901,
+      "durationMs": 2725,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787229775681,
+      "logoutTime": 1787230354090,
+      "durationMs": 578409,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787230359941,
+      "logoutTime": 1787230760945,
+      "durationMs": 401004,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787230767753,
+      "logoutTime": 1787230876285,
+      "durationMs": 108532,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787230881818,
+      "logoutTime": 1787231148317,
+      "durationMs": 266499,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787231630527,
+      "logoutTime": 1787232139428,
+      "durationMs": 508901,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787232224108,
+      "logoutTime": 1787232779327,
+      "durationMs": 555219,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787232784870,
+      "logoutTime": 1787232913035,
+      "durationMs": 128165,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787232980135,
+      "logoutTime": 1787233193944,
+      "durationMs": 213809,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787289651082,
+      "logoutTime": 1787290276963,
+      "durationMs": 625881,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787290317532,
+      "logoutTime": 1787290989283,
+      "durationMs": 671751,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787291465208,
+      "logoutTime": 1787292096296,
+      "durationMs": 631088,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787292100283,
+      "logoutTime": 1787292408237,
+      "durationMs": 307954,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787292413208,
+      "logoutTime": 1787293199707,
+      "durationMs": 786499,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787293214630,
+      "logoutTime": 1787293758820,
+      "durationMs": 544190,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787293763333,
+      "logoutTime": 1787298020235,
+      "durationMs": 4256902,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787304107264,
+      "logoutTime": 1787304788946,
+      "durationMs": 681682,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787304861648,
+      "logoutTime": 1787304864486,
+      "durationMs": 2838,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787304874631,
+      "logoutTime": 1787305381260,
+      "durationMs": 506629,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787305384979,
+      "logoutTime": 1787306223590,
+      "durationMs": 838611,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "Unknown",
+      "userName": "Operator 123",
+      "loginTime": 1787306561570,
+      "logoutTime": 1787307491520,
+      "durationMs": 929950,
+      "deviceId": "scanpro-test-01"
+    }
+  ],
+  "attendance_overrides": {}
 }

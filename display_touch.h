@@ -119,9 +119,10 @@ inline bool displayTouchInit() {
   if (expanderOK) {
     // Reset pulse then release (LCD RST is on expander P1)
     ioExpander.setLcdRST(false);
-    delay(20);
+    delay(100);
     ioExpander.setLcdRST(true);
-    delay(120);
+    ioExpander.setSpeakerPA(true); // Enable speaker power amplifier via IO expander pin P7
+    delay(100);
   } else {
     Serial.println("[display] WARNING: TCA9554 expander not found — "
                     "check I2C_SDA/I2C_SCL and TCA9554_I2C_ADDR in pins_config.h");

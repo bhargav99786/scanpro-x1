@@ -10,12 +10,13 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <WebSocketsClient.h> // For audio streaming
 
-#include <Preferences.h>
+#include "pins_config.h"
 
 // ---- WiFi & MQTT Configuration ----
-inline char wifi_ssid[64]     = "";
-inline char wifi_password[64] = "";
+inline char wifi_ssid[64]     = DEFAULT_WIFI_SSID;
+inline char wifi_password[64] = DEFAULT_WIFI_PASS;
 static const char *MQTT_HOST     = "192.168.0.112"; // your MQTT broker IP/hostname
 static const uint16_t MQTT_PORT  = 1883;             // use 8883 + WiFiClientSecure for TLS in production
 static const char *DEVICE_ID     = "scanpro-test-01";
@@ -23,8 +24,37 @@ static const char *DEVICE_ID     = "scanpro-test-01";
 
 static WiFiClient wifiClient;
 static PubSubClient mqtt(wifiClient);
+static WebSocketsClient audioWs;
 
 inline bool publishDeviceStatus(bool loggedIn, const char* userId);
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/ringbuf.h>
+
+extern RingbufHandle_t audio_rx_ringbuf;
+
+inline void audioWsEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("[audio_ws] Disconnected!");
+      break;
+    case WStype_CONNECTED:
+      Serial.println("[audio_ws] Connected to url: /audio");
+      break;
+    case WStype_BIN: {
+      static uint32_t lastLog = 0;
+      if (millis() - lastLog > 2000) {
+        Serial.printf("[audio_ws] Receiving incoming audio stream (%u B)...\n", (unsigned)length);
+        lastLog = millis();
+      }
+      if (audio_rx_ringbuf && length > 0) {
+        // Non-blocking push to FreeRTOS RingBuffer for playback task
+        xRingbufferSend(audio_rx_ringbuf, payload, length, 0);
+      }
+      break;
+    }
+  }
+}
 
 inline void loadWifiCredentials() {
   Preferences prefs;
@@ -33,8 +63,13 @@ inline void loadWifiCredentials() {
   String p = prefs.getString("pass", "");
   prefs.end();
 
-  strncpy(wifi_ssid, s.c_str(), sizeof(wifi_ssid) - 1);
-  strncpy(wifi_password, p.c_str(), sizeof(wifi_password) - 1);
+  if (s.length() > 0) {
+    strncpy(wifi_ssid, s.c_str(), sizeof(wifi_ssid) - 1);
+    strncpy(wifi_password, p.c_str(), sizeof(wifi_password) - 1);
+    Serial.printf("[wifi] Loaded credentials from NVS: SSID='%s'\n", wifi_ssid);
+  } else {
+    Serial.printf("[wifi] NVS empty, keeping active SSID='%s'\n", wifi_ssid);
+  }
 }
 
 inline void saveWifiCredentials(const char *ssid, const char *pass) {
@@ -52,8 +87,13 @@ inline void saveWifiCredentials(const char *ssid, const char *pass) {
 inline void wifiStartAsync() {
   if (strlen(wifi_ssid) > 0) {
     WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
+    WiFi.setTxPower(WIFI_POWER_19_5dBm);
+    WiFi.setSleep(false); // CRITICAL: Disable Wi-Fi modem sleep to prevent RF dropouts!
     WiFi.begin(wifi_ssid, wifi_password);
     Serial.printf("[wifi] Async connection started for '%s'\n", wifi_ssid);
+  } else {
+    Serial.println("[wifi] WARNING: No saved SSID in NVS! Connect via UI or BLE.");
   }
 }
 
@@ -64,6 +104,9 @@ inline bool wifiConnect(uint32_t timeoutMs = 2000) {
   }
 
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
+  WiFi.setSleep(false);
   WiFi.begin(wifi_ssid, wifi_password);
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < timeoutMs) {
@@ -81,6 +124,8 @@ inline bool wifiConnect(uint32_t timeoutMs = 2000) {
 
 inline bool mqttConnect() {
   if (WiFi.status() != WL_CONNECTED) return false;
+  
+  wifiClient.setTimeout(1); // Set 1 sec socket timeout to prevent UI lag during connection attempts
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   String clientId = String(DEVICE_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
   String statusTopic = String("device/") + DEVICE_ID + "/status";
@@ -114,6 +159,17 @@ inline void mqttLoop() {
       }
     } else {
       mqtt.loop();
+    }
+    // audioWs.loop() is now handled exclusively by audioTask!
+  } else {
+    // If Wi-Fi is disconnected, retry connecting periodically
+    static uint32_t lastWifiAttempt = 0;
+    if (millis() - lastWifiAttempt > 5000) {
+      lastWifiAttempt = millis();
+      if (strlen(wifi_ssid) > 0) {
+        Serial.printf("[wifi] Retrying connection to '%s'...\n", wifi_ssid);
+        WiFi.begin(wifi_ssid, wifi_password);
+      }
     }
   }
 }
@@ -149,10 +205,10 @@ inline bool publishDeviceStatus(bool loggedIn, const char* userId) {
   
   StaticJsonDocument<128> doc;
   doc["status"] = "online";
-  if (loggedIn && userId && strlen(userId) > 0) {
+  if (loggedIn && userId && strlen(userId) > 0 && strcmp(userId, "Unassigned") != 0 && strcmp(userId, "No Login") != 0) {
     doc["user"] = userId;
   } else {
-    doc["user"] = "Unassigned";
+    doc["user"] = "No Login";
   }
   doc["ts"] = millis();
   

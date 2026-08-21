@@ -31,6 +31,7 @@ public:
 
   // Convenience helpers matching pins_config.h names
   void setLcdRST(bool level) { digitalWrite(EXPANDER_LCD_RST, level); }
+  void setSpeakerPA(bool level) { digitalWrite(7, level); } // Pin P7 controls Speaker PA on 3.5" LCD board
 
 private:
   uint8_t _addr = TCA9554_I2C_ADDR;

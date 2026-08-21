@@ -1,11 +1,13 @@
 const express = require('express');
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const WebSocket = require('ws');
 
 
 const HTTP_PORT = 3030;
+const HTTPS_PORT = 3031;
 const MQTT_PORT = 1883;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
@@ -34,6 +36,11 @@ if (fs.existsSync(DATA_FILE)) {
         console.error('Error reading data.json, starting fresh.', e);
     }
 }
+// Ensure arrays exist
+if (!db.attendance_logs) db.attendance_logs = [];
+if (!db.attendance_overrides) db.attendance_overrides = {};
+if (!db.tasks) db.tasks = [];
+if (!db.users) db.users = [];
 
 // Helper to save data
 function saveData() {
@@ -123,11 +130,22 @@ app.get('/api/tasks', (req, res) => {
 
 function publishTasksForAssignee(assignee) {
     const activeDevices = db.active_devices || {};
-    const userTasks = (db.tasks || []).filter(t => t.assignee === assignee);
     
     for (const [deviceId, data] of Object.entries(activeDevices)) {
-        if (data.user === assignee) {
-            console.log(`[MQTT] Publishing tasks to device/${deviceId}/tasks for user ${assignee}`);
+        const devUser = data.user;
+        const userObj = db.users ? db.users.find(u => u.name === devUser || u.id === devUser) : null;
+        const userId = userObj ? userObj.id : null;
+
+        const isMatch = (devUser === assignee) || (userId === assignee) || (deviceId === assignee);
+
+        if (isMatch) {
+            const userTasks = (db.tasks || []).filter(t => 
+                t.assignee === assignee || 
+                t.assignee === devUser || 
+                (userId && t.assignee === userId) || 
+                t.assignee === deviceId
+            );
+            console.log(`[MQTT] Publishing ${userTasks.length} tasks to device/${deviceId}/tasks for assignee '${assignee}' (user: '${devUser}')`);
             mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
         }
     }
@@ -138,7 +156,7 @@ app.post('/api/tasks', (req, res) => {
     if (!assignee || !name) return res.status(400).json({ error: 'assignee and name required' });
     
     if (!db.tasks) db.tasks = [];
-    const newTask = { id: Date.now().toString(), assignee, name, prio, items: items || [] };
+    const newTask = { id: Date.now().toString(), assignee, name, prio, status: 'active', items: items || [] };
     db.tasks.push(newTask);
     saveData();
     
@@ -210,8 +228,56 @@ app.delete('/api/tasks/:id', (req, res) => {
 });
 
 // Users Management API
+const activeSessions = {}; // { deviceId: { user: 'Operator 1', loginTime: 12345678 } }
+
 app.get('/api/users', (req, res) => {
-    res.json(db.users || []);
+    // Inject active session data into the response so frontend can show live timers
+    const usersWithSessions = (db.users || []).map(u => {
+        const session = Object.values(activeSessions).find(s => s.user === u.name);
+        return {
+            ...u,
+            active_session_start: session ? session.loginTime : null,
+            worked_ms: u.worked_ms || 0
+        };
+    });
+    res.json(usersWithSessions);
+});
+
+// Attendance Management API
+app.get('/api/attendance', (req, res) => {
+    // Return historical logs plus any currently active sessions
+    const activeSessionLogs = Object.entries(activeSessions).map(([deviceId, session]) => ({
+        userId: session.userId,
+        userName: session.user,
+        loginTime: session.loginTime,
+        logoutTime: null,
+        durationMs: Date.now() - session.loginTime,
+        status: 'Active',
+        deviceId
+    }));
+    
+    res.json({
+        history: db.attendance_logs || [],
+        active: activeSessionLogs,
+        overrides: db.attendance_overrides || {}
+    });
+});
+
+app.post('/api/attendance/override', (req, res) => {
+    const { key, durationMs } = req.body;
+    if (!key || durationMs === undefined) return res.status(400).json({ error: 'Missing parameters' });
+    
+    if (!db.attendance_overrides) db.attendance_overrides = {};
+    db.attendance_overrides[key] = durationMs;
+    saveData();
+    
+    wss.clients.forEach(c => {
+        if (c.readyState === WebSocket.OPEN) {
+            c.send(JSON.stringify({ type: 'UPDATE_ATTENDANCE' }));
+        }
+    });
+    
+    res.json({ success: true });
 });
 
 app.post('/api/users', (req, res) => {
@@ -266,7 +332,63 @@ app.delete('/api/users/:id', (req, res) => {
 
 // 3. HTTP Server and WebSockets
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true });
+const audioWss = new WebSocket.Server({ noServer: true });
+
+server.on('upgrade', function upgrade(request, socket, head) {
+    if (request.url.startsWith('/audio')) {
+        audioWss.handleUpgrade(request, socket, head, function done(ws) {
+            audioWss.emit('connection', ws, request);
+        });
+    } else {
+        wss.handleUpgrade(request, socket, head, function done(ws) {
+            wss.emit('connection', ws, request);
+        });
+    }
+});
+
+// Bidirectional Audio Routing:
+//   ESP32 Mic → PC/Browser: VAD-gated frames from ESP32 forwarded to all PC clients.
+//   PC/Browser → ESP32:     "Start Talking" frames from PC forwarded to target ESP32 device.
+audioWss.on('connection', (ws, request) => {
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    ws.clientType = url.searchParams.get('client_type') || 'pc';
+    ws.deviceId = url.searchParams.get('device_id') || 'unassigned';
+    ws.targetDeviceId = url.searchParams.get('target_device') || 'all';
+    console.log(`[WS] Audio client connected: type=${ws.clientType}, deviceId=${ws.deviceId}, target=${ws.targetDeviceId}`);
+
+    ws.on('error', (err) => console.error(`[WS Audio Error] ${ws.clientType} (${ws.deviceId}):`, err.message));
+
+    ws.on('message', (message) => {
+        if (ws.clientType === 'esp32') {
+            // ESP32 Mic → all connected PC/browser clients
+            audioWss.clients.forEach(client => {
+                if (client !== ws && client.readyState === WebSocket.OPEN && client.clientType === 'pc') {
+                    client.send(message, { binary: true });
+                }
+            });
+            process.stdout.write('^'); // uplink from ESP32
+
+        } else if (ws.clientType === 'pc') {
+            // PC "Start Talking" → target ESP32 device
+            audioWss.clients.forEach(client => {
+                if (client !== ws && client.readyState === WebSocket.OPEN && client.clientType === 'esp32') {
+                    if (ws.targetDeviceId && ws.targetDeviceId !== 'all') {
+                        const activeDev = (db.active_devices || {})[client.deviceId];
+                        const devUser = activeDev ? activeDev.user : null;
+                        const isMatch = (client.deviceId === ws.targetDeviceId) ||
+                                        (devUser === ws.targetDeviceId) ||
+                                        (client.deviceId && client.deviceId.includes(ws.targetDeviceId));
+                        if (!isMatch) return;
+                    }
+                    client.send(message, { binary: true });
+                }
+            });
+            process.stdout.write('v'); // downlink to ESP32
+        }
+    });
+});
+
 
 function broadcastScan(scanData) {
     // Enrich with product name if available
@@ -325,14 +447,59 @@ mqttClient.on('message', (topic, message) => {
             const deviceId = topic.split('/')[1];
             if (!db.active_devices) db.active_devices = {};
             
-            if (payload.status === 'online') {
-                db.active_devices[deviceId] = { user: payload.user, ts: payload.ts || Date.now() };
-                // Send tasks for this user directly to the newly connected device
-                const userTasks = (db.tasks || []).filter(t => t.assignee === payload.user);
-                mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify(userTasks), { retain: true });
+            const prevSession = activeSessions[deviceId];
+            const isOnline = payload.status === 'online';
+            const newUser = isOnline ? payload.user : null;
+            
+            // Handle session ending (device goes offline, OR user changes, OR logout)
+            const isNoLogin = !newUser || newUser === 'Unassigned' || newUser === 'No Login';
+            if (prevSession && (!isOnline || prevSession.user !== newUser || isNoLogin)) {
+                const logoutTime = Date.now();
+                const duration = logoutTime - prevSession.loginTime;
+                
+                // Update cumulative worked_ms
+                const userObj = db.users.find(u => u.name === prevSession.user);
+                if (userObj) {
+                    userObj.worked_ms = (userObj.worked_ms || 0) + duration;
+                }
+                
+                // Add to detailed attendance logs
+                if (!db.attendance_logs) db.attendance_logs = [];
+                db.attendance_logs.push({
+                    userId: prevSession.userId || (userObj ? userObj.id : 'Unknown'),
+                    userName: prevSession.user,
+                    loginTime: prevSession.loginTime,
+                    logoutTime: logoutTime,
+                    durationMs: duration,
+                    deviceId: deviceId
+                });
+                
+                // Keep history trimmed to last 5000 records
+                if (db.attendance_logs.length > 5000) db.attendance_logs.shift();
+                
+                delete activeSessions[deviceId];
+            }
+            
+            if (isOnline) {
+                const displayUser = isNoLogin ? 'No Login' : newUser;
+                if (!isNoLogin) {
+                    if (!activeSessions[deviceId] || activeSessions[deviceId].user !== newUser) {
+                        const userObj = db.users.find(u => u.name === newUser);
+                        activeSessions[deviceId] = { 
+                            user: newUser, 
+                            userId: userObj ? userObj.id : 'Unknown',
+                            loginTime: Date.now() 
+                        };
+                    }
+                }
+                db.active_devices[deviceId] = { user: displayUser, status: 'online', ts: payload.ts || Date.now() };
+                if (!isNoLogin) {
+                    publishTasksForAssignee(newUser);
+                } else {
+                    mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify([]), { retain: true });
+                }
             } else {
                 delete db.active_devices[deviceId];
-                // Clear tasks from the device screen
                 mqttClient.publish(`device/${deviceId}/tasks`, JSON.stringify([]), { retain: true });
             }
             saveData();
@@ -341,6 +508,7 @@ mqttClient.on('message', (topic, message) => {
             wss.clients.forEach(c => {
                 if (c.readyState === WebSocket.OPEN) {
                     c.send(JSON.stringify({ type: 'UPDATE_DEVICES', data: db.active_devices }));
+                    c.send(JSON.stringify({ type: 'UPDATE_USERS' })); // Trigger users table refresh
                 }
             });
         } else if (topic.endsWith('/task_complete')) {
@@ -361,8 +529,8 @@ mqttClient.on('message', (topic, message) => {
                 }
                 
                 const assignee = task.assignee;
-                // Delete the task
-                db.tasks.splice(taskIndex, 1);
+                // Mark task as complete instead of deleting
+                db.tasks[taskIndex].status = 'complete';
                 saveData();
                 
                 // Update specific assignee's tasks
@@ -390,3 +558,25 @@ mqttClient.on('message', (topic, message) => {
 server.listen(HTTP_PORT, () => {
     console.log(`[HTTP/WS] Server and Dashboard running on http://localhost:${HTTP_PORT}`);
 });
+
+if (fs.existsSync(path.join(__dirname, 'key.pem')) && fs.existsSync(path.join(__dirname, 'cert.pem'))) {
+    const options = {
+        key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+        cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+    };
+    const httpsServer = https.createServer(options, app);
+    httpsServer.on('upgrade', (request, socket, head) => {
+        if (request.url.startsWith('/audio')) {
+            audioWss.handleUpgrade(request, socket, head, (ws) => {
+                audioWss.emit('connection', ws, request);
+            });
+        } else {
+            wss.handleUpgrade(request, socket, head, (ws) => {
+                wss.emit('connection', ws, request);
+            });
+        }
+    });
+    httpsServer.listen(HTTPS_PORT, () => {
+        console.log(`[HTTPS/WSS] Secure Dashboard running on https://0.0.0.0:${HTTPS_PORT}`);
+    });
+}

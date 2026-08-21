@@ -1,0 +1,30 @@
+idf_component_register(
+    SRCS 
+        "main.cpp"
+        "display_port.cpp"
+        "esp_es8311_port.cpp"
+        "gm65_scanner.cpp"
+        "network_mqtt.cpp"
+    INCLUDE_DIRS 
+        "."
+    PRIV_REQUIRES 
+        driver
+        esp_wifi
+        XPowersLib
+        esp_port
+        espressif__esp_lvgl_port
+        espressif__esp_io_expander_tca9554
+        esp_event
+        nvs_flash
+        mqtt
+        esp_websocket_client
+        esp_codec_dev
+        esp_driver_i2s
+        esp_driver_i2c
+        esp_driver_gpio
+        esp_driver_uart
+        json
+        freertos
+)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-missing-field-initializers" "-Wno-unused-variable")

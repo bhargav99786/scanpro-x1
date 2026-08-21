@@ -37,12 +37,13 @@
 #include "ble_conn.h"
 #include "ui_screens.h"
 #include "scan_engine.h"
-#include "network.h"
 #include "audio.h"
+#include "network.h"
 #include <XPowersLib.h>
 
 XPowersAXP2101 PMU;    // AXP2101 PMIC — battery gauge
 static bool pmuOk = false;
+volatile bool is_ptt_pressed = false;
 
 void devicePowerOff() {
   Serial.println("[power] Shutting down device via AXP2101 PMIC...");
@@ -109,6 +110,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       String prio = t["prio"] | "Low";
       strncpy(current_tasks[current_task_count].prio, prio.c_str(), 15);
       current_tasks[current_task_count].prio[15] = '\0';
+      
+      String statusStr = t["status"] | "active";
+      strncpy(current_tasks[current_task_count].status, statusStr.c_str(), 15);
+      current_tasks[current_task_count].status[15] = '\0';
       
       if (prio == "High") current_tasks[current_task_count].prio_color = COLOR_DANGER;
       else if (prio == "Med" || prio == "Medium") current_tasks[current_task_count].prio_color = COLOR_SAFFRON;
@@ -196,11 +201,92 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 
+#include <freertos/ringbuf.h>
+
+RingbufHandle_t audio_rx_ringbuf = NULL;
+
+// Dedicated FreeRTOS task for handling duplex audio (Playback + Recording)
+void audioTask(void *pvParameters) {
+  extern volatile bool is_ptt_pressed;
+  extern WebSocketsClient audioWs;
+  
+  const size_t CHUNK_SIZE = 2048;
+  static uint8_t audio_buf[CHUNK_SIZE]; // Microphone recording buffer
+  static uint8_t mono_buf[CHUNK_SIZE / 2];
+  
+  while (true) {
+    // 1. Process WebSocket network loop (triggers audioWsEvent on incoming binary audio)
+    audioWs.loop();
+    
+    // 2. Play incoming audio from RingBuffer to ES8311 Speaker
+    if (audio_rx_ringbuf) {
+      size_t item_size = 0;
+      uint8_t *rx_data = (uint8_t *)xRingbufferReceive(audio_rx_ringbuf, &item_size, 0);
+      if (rx_data && item_size > 0) {
+        size_t frames = item_size / 2;
+        int16_t *mono16 = (int16_t *)rx_data;
+        int16_t *stereo16 = (int16_t *)malloc(frames * 4);
+        if (stereo16) {
+          for (size_t i = 0; i < frames; i++) {
+            stereo16[i * 2]     = mono16[i]; // Left
+            stereo16[i * 2 + 1] = mono16[i]; // Right
+          }
+          audioPlayChunk((const uint8_t *)stereo16, frames * 4);
+          free(stereo16);
+        }
+        vRingbufferReturnItem(audio_rx_ringbuf, (void *)rx_data);
+      }
+    }
+    
+    // 3. Record microphone audio and send over WebSocket when PTT button is held
+    if (is_ptt_pressed && WiFi.status() == WL_CONNECTED) {
+      size_t bytes_read = audioRecordChunk(audio_buf, CHUNK_SIZE);
+      if (bytes_read > 0) {
+        size_t frames = bytes_read / 4; // 16-bit stereo = 4 bytes per frame
+        int16_t* in16 = (int16_t*)audio_buf;
+        int16_t* out16 = (int16_t*)mono_buf;
+        for (size_t i = 0; i < frames; i++) {
+          int16_t l = in16[i * 2];
+          int16_t r = in16[i * 2 + 1];
+          out16[i] = (abs(l) >= abs(r)) ? l : r;
+        }
+        audioWs.sendBIN(mono_buf, frames * 2);
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+      } else {
+        vTaskDelay(2 / portTICK_PERIOD_MS);
+      }
+    } else {
+      vTaskDelay(2 / portTICK_PERIOD_MS); // Yield to keep UI smooth
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(300);
   Serial.println("\n[boot] Smart Barcode Scanner - test firmware starting");
 
+  // ── 0. Initialize Wire & AXP2101 PMIC FIRST so display 3.3V power rails are ON ──
+  Wire.begin(I2C_SDA, I2C_SCL);
+  Wire.setClock(400000);
+
+  pmuOk = PMU.init(Wire, I2C_SDA, I2C_SCL, AXP2101_SLAVE_ADDRESS);
+  if (pmuOk) {
+    PMU.enableGauge();          // turn on the fuel-gauge coulomb counter
+    PMU.setDC1Voltage(3300);   PMU.enableDC1();   // CRITICAL: 3.3V peripheral power rail!
+    PMU.setALDO1Voltage(3300); PMU.enableALDO1();
+    PMU.setALDO2Voltage(3300); PMU.enableALDO2();
+    PMU.setALDO3Voltage(3300); PMU.enableALDO3();
+    PMU.setALDO4Voltage(3300); PMU.enableALDO4();
+    PMU.setDLDO1Voltage(3300); PMU.enableDLDO1();
+    PMU.setDLDO2Voltage(3300); PMU.enableDLDO2();
+    Serial.println("[boot] AXP2101 PMIC initialized — DC1 & ALDO/DLDO 3.3V power rails active");
+    delay(100); // Allow power rails to stabilize
+  } else {
+    Serial.println("[boot] WARNING: AXP2101 PMIC not found");
+  }
+
+  // ── 1. Initialize Display & Touch Subsystem ──────────────────────────────────
   if (!displayTouchInit()) {
     Serial.println("[boot] Display init failed - halting. Check pins_config.h");
     while (1) delay(1000);
@@ -209,21 +295,22 @@ void setup() {
   loadScreenRotation();
   loadWifiCredentials();
 
-  // ── AXP2101 PMIC init (I2C shared with touch; Wire already started) ─────────
-  pmuOk = PMU.init(Wire, I2C_SDA, I2C_SCL, AXP2101_SLAVE_ADDRESS);
-  if (pmuOk) {
-    PMU.enableGauge();          // turn on the fuel-gauge coulomb counter
-    Serial.println("[boot] AXP2101 PMIC found – fuel gauge active");
-  } else {
-    Serial.println("[boot] AXP2101 not found – battery % will show 100%%");
-  }
-
   uiInit();
+  // Seed default offline user (ID 123, PIN 123)
+  strncpy(global_users[0].id, "123", 31);
+  strncpy(global_users[0].name, "Operator 123", 31);
+  strncpy(global_users[0].role, "Operator", 31);
+  strncpy(global_users[0].pin, "123", 7);
+  global_user_count = 1;
+
   updateBatteryStatus(); // Show real battery % immediately at boot
   Serial.println("[boot] Display + LVGL ready");
 
   scanner.begin();
   Serial.println("[boot] GM65 scanner UART ready");
+
+  // Create RingBuffer for non-blocking incoming audio playback
+  audio_rx_ringbuf = xRingbufferCreate(16384, RINGBUF_TYPE_BYTEBUF);
 
   // ── Audio codec (Wire already started by displayTouchInit) ────────────────
   if (!audioInit()) {
@@ -241,6 +328,25 @@ void setup() {
   uiSetWifiStatus("WiFi: connecting...");
   updateBatteryStatus();
 
+  // Initialize Audio WebSocket once safely with device_id (it auto-reconnects)
+  extern WebSocketsClient audioWs;
+  extern void audioWsEvent(WStype_t type, uint8_t * payload, size_t length);
+  String audioPath = String("/audio?client_type=esp32&device_id=") + DEVICE_ID;
+  audioWs.begin("192.168.0.112", 3030, audioPath.c_str());
+  audioWs.onEvent(audioWsEvent);
+  audioWs.setReconnectInterval(5000);
+
+  // Start the dedicated Audio Task to prevent DMA buffer overflows!
+  xTaskCreatePinnedToCore(
+    audioTask,       // Task function
+    "AudioTask",     // Name
+    16384,           // Stack size (16KB)
+    NULL,            // Parameters
+    2,               // Priority (Higher than loop!)
+    NULL,            // Task handle
+    1                // Core 1 (App Core)
+  );
+
   beepStartup();   // ascending triple chirp — system fully ready
   Serial.println("[boot] Setup complete - point GM65 at a barcode to test");
 }
@@ -257,6 +363,8 @@ void loop() {
 
   // Keep MQTT connection alive
   mqttLoop();
+
+  vTaskDelay(2 / portTICK_PERIOD_MS); // Yield to FreeRTOS scheduler to prevent UI touch lag
 
   // Refresh status labels roughly once a second
   if (now - lastWifiStatusUpdate > 1000) {

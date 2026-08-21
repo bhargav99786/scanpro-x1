@@ -65,8 +65,18 @@
 #define I2S_MCK_PIN       12
 #define I2S_BCK_PIN       13
 #define I2S_LRCK_PIN      15
-#define I2S_DOUT_PIN      16   // ESP32 → ES8311 DAC
-#define I2S_DIN_PIN       14   // ES8311 ADC → ESP32 (unused)
-#define AUDIO_SAMPLE_RATE 44100
+#define I2S_DOUT_PIN      14   // ESP32 TX -> ES8311 SDIN (Playback / Speaker Output)
+#define I2S_DIN_PIN       16   // ES8311 SDOUT -> ESP32 RX (Recording / Mic Input)
+#define PA_CTRL_PIN       17   // Onboard Speaker Power Amplifier Enable (GPIO17)
+#define AUDIO_SAMPLE_RATE 16000 // Set to 16kHz for voice intercom matching ESP-IDF reference
 #define AUDIO_MCLK_MULT   256
-#define AUDIO_VOLUME      80   // 0–100
+#define AUDIO_VOLUME      90 // 0–100
+
+// ---------- WiFi Default Fallback Credentials ----------
+#ifndef DEFAULT_WIFI_SSID
+#define DEFAULT_WIFI_SSID "waveshare"
+#endif
+#ifndef DEFAULT_WIFI_PASS
+#define DEFAULT_WIFI_PASS "12345678"
+#endif
+
