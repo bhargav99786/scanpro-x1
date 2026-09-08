@@ -1,3 +1,6 @@
+ScanPro X1 - Smart Handheld Barcode Scanner: General System Test Scenarios,,,,,,,,,
+"Hardware: ESP32-S3 (16MB Flash, 8MB PSRAM) | Display: ST7796 3.5"" Touch | PMIC: AXP2101 | GM65 Scanner | ES8311 Audio",,,,,,,,,
+,,,,,,,,,
 Test ID,Category,Subsystem / Feature,Test Scenario Objective,Priority,Preconditions,Execution Steps,Expected Result,Actual Result,Status
 TC-GEN-01,Power Management,AXP2101 PMIC,Cold Boot and Splash Screen Sequence,P1,Device powered off with battery charged > 20%.,"1. Press power button.
 2. Observe LCD backlight, splash logo, status bar, and initial transition to Login screen.","Device boots within 3 seconds, displays splash screen, initializes all I2C/SPI buses without panic, and navigates to Login screen.",Pass - boots cleanly into Login UI,PASSED
@@ -10,8 +13,8 @@ TC-GEN-03,Power Management,Power Off,Software Shutdown via Settings Menu,P2,"Use
 TC-GEN-04,Display & Touch,Touch Screen,Capacitive Touch Accuracy & Responsiveness,P1,Device on Home or Tasks screen.,"1. Tap interactive elements across all 4 quadrants of display.
 2. Test drag/scroll on task and inventory lists.
 3. Tap on-screen keypad buttons.",FT6336 controller reports touch coordinates accurately with zero lag or phantom touches. Lists scroll smoothly without stutter.,Pass - 60fps smooth touch response,PASSED
-TC-GEN-05,Display & Touch,Screen Rotation,"Display Orientation Changes (0°, 90°, 180°, 270°)",P2,User in Settings screen.,"1. Navigate to Settings -> Screen Rotation.
-2. Select Landscape (0°), Portrait (90°), Inverted Landscape (180°), Inverted Portrait (270°).
+TC-GEN-05,Display & Touch,Screen Rotation,"Display Orientation Changes (0°, 90°, 180°, 270°)",P2,User in network screen.,"1. Navigate to network -> Screen Rotation.
+2. Select Landscape (0°), Hand (90°), Inverted Landscape (180°)
 3. Check layout adaptation.",Display reorients immediately. Touch coordinates dynamically map to new orientation. UI widgets resize to fit aspect ratio.,Pass - dynamic orientation working,PASSED
 TC-GEN-06,Display & Touch,Status Bar,Global Persistent Top Status Bar Elements,P2,Device booted and active.,"1. Switch between Home, Tasks, Scan, Inventory, Setup screens.
 2. Observe top status bar across all screens.","Top status bar remains persistent with screen title, Wi-Fi IP/status, BLE state, and battery indicator across all navigation screens.",Pass - top status bar persistent,PASSED
@@ -36,7 +39,7 @@ TC-GEN-14,Barcode Engine,Audio Feedback,Scan Audio Feedback (Success Chime vs Er
 TC-GEN-15,Inventory,Real-Time Sync,Inventory Sync from Server via MQTT (`config/inventory`),P1,Scanner connected to Wi-Fi and MQTT.,"1. Add/edit an inventory SKU in the Web Dashboard.
 2. Check Scanner Inventory screen.","Scanner receives retained MQTT payload on 'config/inventory', updates internal inventory list, and displays updated items on screen.",Pass - synced 60+ SKUs cleanly,PASSED
 TC-GEN-16,Inventory,Search & Filter,Inventory Search by SKU or Item Name,P2,Inventory screen populated with multiple products.,"1. Tap Search input bar.
-2. Type SKU prefix (e.g. 'SKU-001') or name keyword (e.g. 'Apple').","Inventory list dynamically filters in real-time, showing only matching items with stock quantities.",Ready to Test,Ready to Test
+2. Type SKU prefix (e.g. 'SKU-001') or name keyword (e.g. 'Apple').","Inventory list dynamically filters in real-time, showing only matching items with stock quantities.",Pass ,PASSED
 TC-GEN-17,Inventory,Quantity Adjust,"Manual Stock Quantity Adjustment (+, -, Keypad)",P1,Item selected in Inventory screen.,"1. Tap an item in inventory list to open Qty Adjust screen.
 2. Use '+' and '-' buttons or type new quantity.
 3. Tap 'Save / Update'.","Quantity updates locally, transmits MQTT update to server database, and server reflects new stock count.",Pass - bidirectional sync confirmed,PASSED
@@ -57,9 +60,7 @@ TC-GEN-24,Connectivity,MQTT Reconnection,MQTT Broker Reconnection & State Recove
 2. Observe device connection behavior.","MQTT client automatically reconnects, re-subscribes to required topics (tasks, inventory, hardware, ota), and publishes 'online' status update.",Pass - auto-re-subscribe verified,PASSED
 TC-GEN-25,Bluetooth BLE,Advertising Name,BLE Device Name Format (`ScanPro-XXXX` with MAC),P2,BLE enabled on scanner.,"1. Open Bluetooth settings on smartphone or PC.
 2. Scan for available BLE devices.",Device appears as 'ScanPro-XXXX' where XXXX matches the last 4 characters of the device's hardware MAC address (e.g. 'ScanPro-5664').,Pass - MAC 10:20:ba:46:56:64 -> ScanPro-5664,PASSED
-TC-GEN-26,Bluetooth BLE,HID Keyboard Pairing,BLE HID Keyboard Mode Pairing & Keystroke Injection,P1,Smartphone / PC paired with scanner.,"1. Pair scanner with phone or laptop.
-2. Open Notepad or any text field on phone/PC.
-3. Scan any barcode with scanner.","Scanned barcode characters are instantly typed into the active text field followed by an Enter key press, simulating a USB barcode gun.",Ready to Test,Ready to Test
+,,,,,,,,,
 TC-GEN-27,Bluetooth BLE,BLE Toggle,BLE Service Toggle ON / OFF from Setup Screen,P2,Device in Setup screen.,"1. Tap 'Disable BLE' button -> Check Bluetooth visibility on phone.
 2. Tap 'Enable BLE' button -> Check Bluetooth visibility.","When disabled, BLE stack stops advertising and disconnects. When enabled, BLE restarts advertising and status bar updates to 'BLE: Adv...'.",Pass - dynamic BLE toggle working,PASSED
 TC-GEN-28,Two-Way Audio,PTT Transmission,Microphone Recording & WebSocket Audio Streaming,P1,Scanner and Web Dashboard both online.,"1. Press and hold hardware PTT button (or on-screen PTT toggle).
@@ -73,7 +74,7 @@ TC-GEN-31,Firmware Updates,Resilient Resume,OTA Wi-Fi Disconnect mid-download an
 2. Verify LCD shows 'Wi-Fi Lost (XX%)'.
 3. Restore Wi-Fi.","Device detects drop within 4s, pauses cleanly, displays recovery message, sends HTTP Range header, resumes from exact percentage, and completes OTA.",Pass - HTTP 206 Range resume verified,PASSED
 TC-GEN-32,Firmware Updates,Fail-Safe Rollback,Invalid / Corrupt Firmware File Upload Rejection,P1,OTA triggered with non-ESP32 or corrupted binary file.,"1. Deploy corrupted firmware binary.
-2. Observe device verification and partition state.","Device detects invalid magic byte or fails esp_ota_end verification, aborts write, displays error toast, and remains safely on existing boot partition.",Ready to Test,Ready to Test
+2. Observe device verification and partition state.","Device detects invalid magic byte or fails esp_ota_end verification, aborts write, displays error toast, and remains safely on existing boot partition.",Pass – Update Aborted ,PASSED
 TC-GEN-33,Stress & Reliability,Memory Stability,Free Heap and PSRAM Stability during Continuous Use,P2,Device running continuous operations.,"1. Execute 100 consecutive barcode scans.
 2. Switch screens 50 times.
 3. Transmit 10 PTT voice clips.

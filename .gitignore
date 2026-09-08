@@ -8,3 +8,5 @@ build/
 server/cert.pem
 server/key.pem
 *.zip
+.~lock.*
+.~lock.*#

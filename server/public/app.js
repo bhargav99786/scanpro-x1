@@ -1257,8 +1257,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!fileInput.files.length) return;
 
+            const file = fileInput.files[0];
+
+            // ── CLIENT-SIDE FIRMWARE VALIDATION ─────────────────────────────
+            statusDiv.style.color = 'var(--accent-danger)';
+
+            // 1. Extension check
+            if (!file.name.toLowerCase().endsWith('.bin')) {
+                statusDiv.textContent = '❌ Invalid file type. Only .bin firmware files are allowed.';
+                return;
+            }
+
+            // 2. Minimum size check (64 KB minimum for any valid ESP32 app)
+            const MIN_FIRMWARE_SIZE = 64 * 1024; // 64 KB
+            if (file.size < MIN_FIRMWARE_SIZE) {
+                statusDiv.textContent = `❌ File too small (${(file.size / 1024).toFixed(1)} KB). Valid ESP32 firmware must be at least 64 KB. This looks corrupt or empty.`;
+                return;
+            }
+
+            // 3. Magic byte check — read first 4 bytes in browser
+            try {
+                const headerBytes = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => resolve(new Uint8Array(ev.target.result));
+                    reader.onerror = () => reject(new Error('Could not read file'));
+                    reader.readAsArrayBuffer(file.slice(0, 8));
+                });
+
+                const magic = headerBytes[0];
+                if (magic !== 0xE9) {
+                    statusDiv.textContent = `❌ Invalid firmware: wrong magic byte (got 0x${magic.toString(16).toUpperCase().padStart(2,'0')}, expected 0xE9). This is not a valid ESP32 binary.`;
+                    return;
+                }
+
+                // 4. Segment count sanity check (byte 1, valid range 1–16)
+                const segCount = headerBytes[1];
+                if (segCount < 1 || segCount > 16) {
+                    statusDiv.textContent = `❌ Invalid firmware: bad segment count (${segCount}). File appears corrupt.`;
+                    return;
+                }
+
+            } catch (readErr) {
+                statusDiv.textContent = '❌ Could not read firmware file: ' + readErr.message;
+                return;
+            }
+            // ── END VALIDATION ───────────────────────────────────────────────
+
+            statusDiv.style.color = 'var(--accent-cyan)';
+            statusDiv.textContent = '✅ Firmware validated. Uploading to server...';
+
             const formData = new FormData();
-            formData.append('firmware', fileInput.files[0]);
+            formData.append('firmware', file);
 
             const hiddenTarget = document.getElementById('ota-target-hidden');
             if (hiddenTarget && hiddenTarget.value) {
@@ -1267,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('targetDevice', 'all');
             }
 
-            statusDiv.textContent = "Uploading firmware... Do not turn off devices.";
+            statusDiv.textContent = "📡 Uploading firmware... Do not turn off devices.";
 
             try {
                 const res = await fetch('/api/ota/upload', {
@@ -1277,15 +1326,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await res.json();
 
                 if (res.ok) {
-                    statusDiv.textContent = `Firmware uploaded successfully! Devices are now downloading from: ${result.url}`;
+                    statusDiv.textContent = `✅ Firmware uploaded! Devices are now downloading from: ${result.url}`;
                     statusDiv.style.color = "var(--accent-success)";
                     otaForm.reset();
                 } else {
-                    statusDiv.textContent = `Error: ${result.error}`;
+                    statusDiv.textContent = `❌ Server rejected firmware: ${result.error}`;
                     statusDiv.style.color = "var(--accent-danger)";
                 }
             } catch (err) {
-                statusDiv.textContent = "Upload failed: " + err.message;
+                statusDiv.textContent = "❌ Upload failed: " + err.message;
                 statusDiv.style.color = "var(--accent-danger)";
             }
         });

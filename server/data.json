@@ -22,7 +22,7 @@
     },
     "SKU-90000002": {
       "name": "Sony WH-1000XM5 Headphones",
-      "qty": 28
+      "qty": 17
     },
     "SKU-90000004": {
       "name": "Dell UltraSharp 27-inch",
@@ -38,11 +38,11 @@
     },
     "SKU-10001": {
       "name": "Wireless Keyboard K380",
-      "qty": 45
+      "qty": 44
     },
     "SKU-10002": {
       "name": "Ergonomic Mouse MX Master 3",
-      "qty": 30
+      "qty": 29
     },
     "SKU-10003": {
       "name": "USB-C Hub 7-in-1",
@@ -62,7 +62,7 @@
     },
     "SKU-10007": {
       "name": "GaN Fast Charger 65W",
-      "qty": 60
+      "qty": 59
     },
     "SKU-10008": {
       "name": "Cat6 Ethernet Cable 5m",
@@ -78,7 +78,7 @@
     },
     "SKU-10011": {
       "name": "Noise Cancelling Headset",
-      "qty": 35
+      "qty": 34
     },
     "SKU-10012": {
       "name": "Smart Barcode Scanner GM65",
@@ -114,7 +114,7 @@
       "user": "Operator 1",
       "userId": "1",
       "status": "online",
-      "ts": 13250
+      "ts": 28727
     }
   },
   "tasks": [
@@ -171,7 +171,7 @@
       "assignee": "Operator 1",
       "name": "VIP Delivery Batch",
       "prio": "LOW",
-      "status": "active",
+      "status": "complete",
       "items": [
         {
           "sku": "SKU-10011",
@@ -179,7 +179,8 @@
           "target_qty": 1,
           "picked_qty": 0
         }
-      ]
+      ],
+      "completedAt": "2026-09-08T13:02:33.932Z"
     },
     {
       "id": "1788850456636",
@@ -201,7 +202,7 @@
       "assignee": "Operator 1",
       "name": "VIP Delivery Batch",
       "prio": "LOW",
-      "status": "active",
+      "status": "complete",
       "items": [
         {
           "sku": "SKU-10001",
@@ -209,7 +210,8 @@
           "target_qty": 1,
           "picked_qty": 0
         }
-      ]
+      ],
+      "completedAt": "2026-09-08T13:04:06.359Z"
     },
     {
       "id": "1788850486837",
@@ -247,7 +249,7 @@
       "assignee": "Operator 1",
       "name": "VIP Delivery Batch",
       "prio": "HIGH",
-      "status": "active",
+      "status": "complete",
       "items": [
         {
           "sku": "SKU-10002",
@@ -255,14 +257,15 @@
           "target_qty": 1,
           "picked_qty": 0
         }
-      ]
+      ],
+      "completedAt": "2026-09-08T12:58:34.697Z"
     },
     {
       "id": "1788850588548",
       "assignee": "Operator 1",
       "name": "VIP Delivery Batch",
       "prio": "HIGH",
-      "status": "active",
+      "status": "complete",
       "items": [
         {
           "sku": "SKU-10007",
@@ -270,14 +273,15 @@
           "target_qty": 1,
           "picked_qty": 0
         }
-      ]
+      ],
+      "completedAt": "2026-09-08T12:58:38.400Z"
     },
     {
       "id": "1788860968308",
       "assignee": "Operator 1",
       "name": "VIP Delivery Batch",
       "prio": "HIGH",
-      "status": "active",
+      "status": "complete",
       "items": [
         {
           "sku": "SKU-90000002",
@@ -285,7 +289,8 @@
           "target_qty": 11,
           "picked_qty": 0
         }
-      ]
+      ],
+      "completedAt": "2026-09-08T12:58:32.384Z"
     }
   ],
   "users": [
@@ -300,14 +305,14 @@
       "name": "Operator 1",
       "role": "Warehouse Operator",
       "pin": "1234",
-      "worked_ms": 25099777
+      "worked_ms": 28770058
     },
     {
       "id": "2",
       "name": "Operator 2",
       "role": "Warehouse Operator",
       "pin": "1234",
-      "worked_ms": 372681
+      "worked_ms": 875780
     }
   ],
   "attendance_logs": [
@@ -3653,6 +3658,886 @@
       "loginTime": 1788866027522,
       "logoutTime": 1788866401318,
       "durationMs": 373796,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788866410141,
+      "logoutTime": 1788867222221,
+      "durationMs": 812080,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867229767,
+      "logoutTime": 1788867274712,
+      "durationMs": 44945,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867299380,
+      "logoutTime": 1788867299381,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867359352,
+      "logoutTime": 1788867359358,
+      "durationMs": 6,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867398672,
+      "logoutTime": 1788867407950,
+      "durationMs": 9278,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867413575,
+      "logoutTime": 1788867418821,
+      "durationMs": 5246,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867422789,
+      "logoutTime": 1788867434400,
+      "durationMs": 11611,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867438541,
+      "logoutTime": 1788867442457,
+      "durationMs": 3916,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867448802,
+      "logoutTime": 1788867454740,
+      "durationMs": 5938,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867461616,
+      "logoutTime": 1788867487158,
+      "durationMs": 25542,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867496680,
+      "logoutTime": 1788867500860,
+      "durationMs": 4180,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867504392,
+      "logoutTime": 1788867510159,
+      "durationMs": 5767,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867514617,
+      "logoutTime": 1788867518520,
+      "durationMs": 3903,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867522090,
+      "logoutTime": 1788867524242,
+      "durationMs": 2152,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867529818,
+      "logoutTime": 1788867533609,
+      "durationMs": 3791,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867540039,
+      "logoutTime": 1788867611459,
+      "durationMs": 71420,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867618511,
+      "logoutTime": 1788867621619,
+      "durationMs": 3108,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867628478,
+      "logoutTime": 1788867632116,
+      "durationMs": 3638,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867637413,
+      "logoutTime": 1788867639491,
+      "durationMs": 2078,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867643249,
+      "logoutTime": 1788867646079,
+      "durationMs": 2830,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867649349,
+      "logoutTime": 1788867651431,
+      "durationMs": 2082,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867655081,
+      "logoutTime": 1788867665439,
+      "durationMs": 10358,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867668708,
+      "logoutTime": 1788867669985,
+      "durationMs": 1277,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867674428,
+      "logoutTime": 1788867676602,
+      "durationMs": 2174,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867681810,
+      "logoutTime": 1788867683949,
+      "durationMs": 2139,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867689675,
+      "logoutTime": 1788867691575,
+      "durationMs": 1900,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867698098,
+      "logoutTime": 1788867702598,
+      "durationMs": 4500,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867705809,
+      "logoutTime": 1788867708259,
+      "durationMs": 2450,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867711630,
+      "logoutTime": 1788867730395,
+      "durationMs": 18765,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867733679,
+      "logoutTime": 1788867735939,
+      "durationMs": 2260,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867739019,
+      "logoutTime": 1788867742218,
+      "durationMs": 3199,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867745919,
+      "logoutTime": 1788867747728,
+      "durationMs": 1809,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867750848,
+      "logoutTime": 1788867752985,
+      "durationMs": 2137,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867762155,
+      "logoutTime": 1788867764074,
+      "durationMs": 1919,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867772751,
+      "logoutTime": 1788867774835,
+      "durationMs": 2084,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867778087,
+      "logoutTime": 1788867780404,
+      "durationMs": 2317,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867783629,
+      "logoutTime": 1788867785528,
+      "durationMs": 1899,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867792874,
+      "logoutTime": 1788867799155,
+      "durationMs": 6281,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867803849,
+      "logoutTime": 1788867806618,
+      "durationMs": 2769,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867812902,
+      "logoutTime": 1788867816450,
+      "durationMs": 3548,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867821460,
+      "logoutTime": 1788867824828,
+      "durationMs": 3368,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867830389,
+      "logoutTime": 1788867831991,
+      "durationMs": 1602,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867836130,
+      "logoutTime": 1788867838378,
+      "durationMs": 2248,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867847978,
+      "logoutTime": 1788867856242,
+      "durationMs": 8264,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867860943,
+      "logoutTime": 1788867880814,
+      "durationMs": 19871,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867884300,
+      "logoutTime": 1788867891882,
+      "durationMs": 7582,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867895714,
+      "logoutTime": 1788867897437,
+      "durationMs": 1723,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867903131,
+      "logoutTime": 1788867917028,
+      "durationMs": 13897,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867922897,
+      "logoutTime": 1788867924708,
+      "durationMs": 1811,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788867928465,
+      "logoutTime": 1788867930539,
+      "durationMs": 2074,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867937610,
+      "logoutTime": 1788867999626,
+      "durationMs": 62016,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788867999626,
+      "logoutTime": 1788868005178,
+      "durationMs": 5552,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868009865,
+      "logoutTime": 1788868013813,
+      "durationMs": 3948,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868023400,
+      "logoutTime": 1788868035349,
+      "durationMs": 11949,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868035363,
+      "logoutTime": 1788868035396,
+      "durationMs": 33,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868035402,
+      "logoutTime": 1788868044801,
+      "durationMs": 9399,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868044801,
+      "logoutTime": 1788868091937,
+      "durationMs": 47136,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868091949,
+      "logoutTime": 1788868091978,
+      "durationMs": 29,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868091981,
+      "logoutTime": 1788868105865,
+      "durationMs": 13884,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868105865,
+      "logoutTime": 1788868139490,
+      "durationMs": 33625,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139490,
+      "logoutTime": 1788868139492,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139492,
+      "logoutTime": 1788868139494,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139494,
+      "logoutTime": 1788868139496,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139496,
+      "logoutTime": 1788868139497,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139497,
+      "logoutTime": 1788868139498,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139498,
+      "logoutTime": 1788868139499,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139499,
+      "logoutTime": 1788868139501,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139501,
+      "logoutTime": 1788868139502,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139502,
+      "logoutTime": 1788868139503,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139503,
+      "logoutTime": 1788868139504,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139504,
+      "logoutTime": 1788868139505,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139505,
+      "logoutTime": 1788868139506,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139506,
+      "logoutTime": 1788868139507,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139507,
+      "logoutTime": 1788868139509,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139509,
+      "logoutTime": 1788868139510,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139510,
+      "logoutTime": 1788868139511,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139511,
+      "logoutTime": 1788868139512,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139512,
+      "logoutTime": 1788868139513,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139513,
+      "logoutTime": 1788868139515,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139515,
+      "logoutTime": 1788868139516,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139516,
+      "logoutTime": 1788868139517,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139517,
+      "logoutTime": 1788868139519,
+      "durationMs": 2,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139519,
+      "logoutTime": 1788868139520,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139520,
+      "logoutTime": 1788868139521,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139521,
+      "logoutTime": 1788868139522,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139522,
+      "logoutTime": 1788868139523,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139523,
+      "logoutTime": 1788868139524,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868139524,
+      "logoutTime": 1788868139525,
+      "durationMs": 1,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788868145913,
+      "logoutTime": 1788868154385,
+      "durationMs": 8472,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788868161773,
+      "logoutTime": 1788868166130,
+      "durationMs": 4357,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788868171019,
+      "logoutTime": 1788868175989,
+      "durationMs": 4970,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868181638,
+      "logoutTime": 1788868186447,
+      "durationMs": 4809,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868192683,
+      "logoutTime": 1788868196448,
+      "durationMs": 3765,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868204895,
+      "logoutTime": 1788868244247,
+      "durationMs": 39352,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "2",
+      "userName": "Operator 2",
+      "loginTime": 1788868254671,
+      "logoutTime": 1788868259835,
+      "durationMs": 5164,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788868267349,
+      "logoutTime": 1788868760711,
+      "durationMs": 493362,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788868763573,
+      "logoutTime": 1788869418081,
+      "durationMs": 654508,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869431362,
+      "logoutTime": 1788869496474,
+      "durationMs": 65112,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869501055,
+      "logoutTime": 1788869561967,
+      "durationMs": 60912,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869578305,
+      "logoutTime": 1788869602614,
+      "durationMs": 24309,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869633275,
+      "logoutTime": 1788869696554,
+      "durationMs": 63279,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869702776,
+      "logoutTime": 1788869718683,
+      "durationMs": 15907,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869725341,
+      "logoutTime": 1788869901276,
+      "durationMs": 175935,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788869909247,
+      "logoutTime": 1788869964426,
+      "durationMs": 55179,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788870322749,
+      "logoutTime": 1788870515042,
+      "durationMs": 192293,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788870646372,
+      "logoutTime": 1788870738086,
+      "durationMs": 91714,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788870745223,
+      "logoutTime": 1788870771077,
+      "durationMs": 25854,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788870791767,
+      "logoutTime": 1788870819307,
+      "durationMs": 27540,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788871160302,
+      "logoutTime": 1788871495740,
+      "durationMs": 335438,
+      "deviceId": "scanpro-test-01"
+    },
+    {
+      "userId": "1",
+      "userName": "Operator 1",
+      "loginTime": 1788871500660,
+      "logoutTime": 1788871974466,
+      "durationMs": 473806,
       "deviceId": "scanpro-test-01"
     }
   ],

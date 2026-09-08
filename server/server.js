@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs');
+const crypto = require('crypto');
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -116,6 +117,114 @@ app.post('/api/ota/upload', otaUpload.single('firmware'), (req, res) => {
         return res.status(400).json({ error: 'No firmware file uploaded' });
     }
 
+    const fwPath = req.file.path;
+    const fileSize = req.file.size;
+
+    // ── SERVER-SIDE FIRMWARE DEEP VALIDATION ─────────────────────────────────
+    // Valid ESP32 chip IDs
+    const ESP32_CHIP_IDS = {
+        0x0000: 'ESP32', 0x0002: 'ESP32-S2', 0x0005: 'ESP32-C3',
+        0x0009: 'ESP32-S3', 0x000C: 'ESP32-H2', 0x0010: 'ESP32-C6'
+    };
+
+    let fwData;
+    try {
+        fwData = fs.readFileSync(fwPath);
+    } catch (readErr) {
+        fs.unlinkSync(fwPath);
+        console.warn('[OTA] Rejected: could not read uploaded file:', readErr.message);
+        return res.status(400).json({ error: 'Could not read firmware file: ' + readErr.message });
+    }
+
+    // 1. Minimum size check (64 KB)
+    const MIN_SIZE = 64 * 1024;
+    if (fileSize < MIN_SIZE) {
+        fs.unlinkSync(fwPath);
+        console.warn(`[OTA] Rejected: file too small (${fileSize} bytes)`);
+        return res.status(400).json({
+            error: `File too small (${(fileSize / 1024).toFixed(1)} KB). Valid ESP32 firmware must be at least 64 KB.`
+        });
+    }
+
+    // 2. Magic byte check — byte 0 must be 0xE9
+    const magic = fwData[0];
+    if (magic !== 0xE9) {
+        fs.unlinkSync(fwPath);
+        console.warn(`[OTA] Rejected: bad magic byte 0x${magic.toString(16).toUpperCase()}`);
+        return res.status(400).json({
+            error: `Invalid firmware: wrong magic byte (0x${magic.toString(16).toUpperCase().padStart(2,'0')}). Expected 0xE9.`
+        });
+    }
+
+    // 3. Segment count sanity — byte 1, valid range 1–16
+    const segCount = fwData[1];
+    if (segCount < 1 || segCount > 16) {
+        fs.unlinkSync(fwPath);
+        console.warn(`[OTA] Rejected: bad segment count ${segCount}`);
+        return res.status(400).json({
+            error: `Invalid firmware: bad segment count (${segCount}). File appears corrupt.`
+        });
+    }
+
+    // 4. Chip ID check — bytes 12–13 (little-endian), must be a known ESP32 variant
+    const chipId = fwData.readUInt16LE(12);
+    const chipName = ESP32_CHIP_IDS[chipId];
+    if (!chipName) {
+        fs.unlinkSync(fwPath);
+        console.warn(`[OTA] Rejected: unknown chip ID 0x${chipId.toString(16).padStart(4,'0')}`);
+        return res.status(400).json({
+            error: `Invalid firmware: unknown chip ID (0x${chipId.toString(16).toUpperCase().padStart(4,'0')}). Not a valid ESP32 binary.`
+        });
+    }
+
+    // 5. Segment layout integrity — walk all segment headers and verify total size matches file
+    const IMG_HDR_SIZE = 24;   // esp_image_header_t
+    const SEG_HDR_SIZE = 8;    // esp_image_segment_header_t (load_addr + data_len)
+    let pos = IMG_HDR_SIZE;
+    try {
+        for (let i = 0; i < segCount; i++) {
+            if (pos + SEG_HDR_SIZE > fileSize) {
+                throw new Error(`Segment ${i} header extends beyond file end (file truncated)`);
+            }
+            const segDataLen = fwData.readUInt32LE(pos + 4);
+            pos += SEG_HDR_SIZE + segDataLen;
+            if (pos > fileSize) {
+                throw new Error(`Segment ${i} data extends beyond file end (file truncated or corrupt)`);
+            }
+        }
+    } catch (segErr) {
+        fs.unlinkSync(fwPath);
+        console.warn(`[OTA] Rejected: segment layout error — ${segErr.message}`);
+        return res.status(400).json({
+            error: `Corrupt firmware: ${segErr.message}`
+        });
+    }
+
+    // 6. SHA256 hash verification — byte 23 of header = hash_appended flag
+    //    When set to 1, last 32 bytes of image = SHA256(all bytes except last 32)
+    const hashAppended = fwData[23];
+    if (hashAppended === 1) {
+        if (fileSize < 33) {
+            fs.unlinkSync(fwPath);
+            return res.status(400).json({ error: 'File too small to contain SHA256 hash.' });
+        }
+        const claimedHash  = fwData.slice(fileSize - 32);
+        const computedHash = crypto.createHash('sha256').update(fwData.slice(0, fileSize - 32)).digest();
+        if (!claimedHash.equals(computedHash)) {
+            fs.unlinkSync(fwPath);
+            console.warn('[OTA] Rejected: SHA256 mismatch — firmware is corrupt or tampered');
+            console.warn(`  Claimed:  ${claimedHash.toString('hex')}`);
+            console.warn(`  Computed: ${computedHash.toString('hex')}`);
+            return res.status(400).json({
+                error: 'Firmware integrity check failed: SHA256 hash mismatch. File is corrupt or tampered.'
+            });
+        }
+        console.log(`[OTA] SHA256 verified ✓`);
+    }
+
+    console.log(`[OTA] ✅ Validation passed — chip=${chipName}, segments=${segCount}, size=${(fileSize/1024).toFixed(1)}KB`);
+    // ── END VALIDATION ───────────────────────────────────────────────────────
+
     const networkInterfaces = os.networkInterfaces();
     let serverIp = '127.0.0.1';
     for (const name of Object.keys(networkInterfaces)) {
@@ -137,12 +246,12 @@ app.post('/api/ota/upload', otaUpload.single('firmware'), (req, res) => {
     const target = req.body.targetDevice || 'all';
 
     if (target === 'all') {
-        console.log(`[OTA] Firmware uploaded. Broadcasting OTA trigger to ALL devices with URL: ${fwUrl}`);
+        console.log(`[OTA] Broadcasting OTA trigger to ALL devices: ${fwUrl}`);
         mqttClient.publish('config/ota', JSON.stringify({ url: fwUrl }));
     } else {
         const targets = target.split(',').map(t => t.trim()).filter(t => t);
         targets.forEach(t => {
-            console.log(`[OTA] Firmware uploaded. Sending OTA trigger to DEVICE ${t} with URL: ${fwUrl}`);
+            console.log(`[OTA] Sending OTA trigger to DEVICE ${t}: ${fwUrl}`);
             mqttClient.publish(`device/${t}/ota`, JSON.stringify({ url: fwUrl }));
         });
     }

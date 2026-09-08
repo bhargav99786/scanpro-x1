@@ -28,11 +28,17 @@ ScanPro X1 is a production-grade, real-time warehouse barcode scanning and manag
 - **Power Off Button:** Dedicated hardware power-off action from Settings and Setup screens — sends graceful shutdown signal via AXP2101.
 - **Wrist Detection:** Optional wrist-detect toggle for auto screen-on when raised.
 
-### 📲 OTA Firmware Updates
-- **Wireless OTA:** Upload new firmware directly from the web dashboard — no cables needed.
-- **Resumable Uploads:** OTA upload state is tracked; the process recovers gracefully from WiFi interruptions without restarting from 0%.
-- **Dual OTA Partitions:** Uses ESP-IDF's native OTA partition scheme (`ota_0`/`ota_1`) for safe rollback.
-- **Version Display:** Current firmware version shown on device status bar and reported to the server.
+### 📲 Multi-Layer Resilient OTA Updates
+- **Zero-Touch Wireless OTA:** Upload new firmware directly from the web dashboard — broadcast to all scanners or targeted devices via MQTT.
+- **Deep Server-Side Binary Inspection (Layer 2):** Every uploaded firmware binary undergoes cryptographic and structural integrity analysis before being broadcast:
+  - **Magic Byte Check:** Validates ESP image signature (`0xE9` at offset 0).
+  - **ESP32 Chip ID Validation:** Checks hardware architecture (ESP32-S3 `0x0009`, ESP32, ESP32-C3, etc.) preventing cross-architecture flashing.
+  - **Segment Boundary Traversal:** Parses image header and walks all segments to catch truncated or malformed images.
+  - **Appended SHA-256 Verification:** Validates the binary's trailing cryptographic hash against computed payload hash.
+  - **Immediate Corrupt File Rejection:** Corrupted, truncated, bitflipped, or invalid architecture binaries are immediately rejected with actionable dashboard alerts.
+- **Resumable HTTP Uploads:** OTA upload state is tracked; recovers gracefully from WiFi drops without restarting from 0%.
+- **Dual Partition Safe Rollback (Layer 3):** Uses ESP-IDF's native dual-boot scheme (`ota_0`/`ota_1`) with automatic fallback to previous operational partition if the new image fails boot self-tests.
+- **Real-Time Version Display:** Current firmware version reported in status bar and synced via MQTT.
 
 ### 🖥️ Responsive LVGL UI
 - **Portrait & Landscape:** Full responsive layout — all screens automatically reflow when the device is rotated.
@@ -99,6 +105,10 @@ smart_barcode_scanner/
 │       └── firmware_ota_update.bin
 ├── smart_barcode_scanner.ino  # Legacy Arduino sketch (reference only)
 ├── ui_screens.h               # Legacy Arduino UI (reference only)
+├── ScanPro_X1_General_Testing_Scenarios.xlsx # Comprehensive system test matrix (38+ scenarios)
+├── ScanPro_X1_General_Testing_Scenarios.csv  # CSV export of general test scenarios
+├── OTA_Resilient_Testing_Scenarios.xlsx      # Multi-layer OTA resilience & corruption test suite
+├── OTA_Resilient_Testing_Scenarios.csv       # CSV export of OTA test scenarios
 └── README.md
 ```
 
@@ -175,6 +185,28 @@ In portrait mode (`width < 400px`), the bottom action bar has 3 buttons perfectl
 │  74px    74px    74px (PTT)     │
 └─────────────────────────────────┘
 ```
+
+---
+
+## 🧪 Test Documentation & Verification Matrix
+
+The repository includes complete QA testing workbooks and CSV exports designed for hardware-in-the-loop (HIL) and system validation:
+
+### 1. General System Test Matrix (`ScanPro_X1_General_Testing_Scenarios.xlsx`)
+Comprehensive 38-scenario test suite covering all operational aspects of the device and server ecosystem:
+- **Core Scanning (GM65 UART + BLE):** 1D/2D symbology decoding, rapid batch scanning, damaged/low-contrast code handling.
+- **Real-Time Sync:** Bi-directional MQTT/WebSocket state synchronization under normal and high network loads.
+- **Warehouse Task Picking Workflow:** Strict SKU barcode matching, quantity deductions, and error handling for unexpected scans.
+- **Two-Way Voice Intercom (PTT):** ES8311 I2S codec initialization, VAD gating, packet streaming, and bi-directional audio clarity.
+- **Power Management & AXP2101:** Battery ADC accuracy, charge status telemetry, power off button deep sleep/shutdown.
+- **Responsive UI:** Dynamic rotation between portrait (320×480) and landscape (480×320), non-overlapping bottom action buttons.
+- **Offline Resilience:** NVS cached login credentials and offline buffer behavior.
+
+### 2. Multi-Layer OTA Resilience Matrix (`OTA_Resilient_Testing_Scenarios.xlsx`)
+Production resilience testing covering firmware distribution failure modes:
+- **Layer 1 (Client Validation):** Empty files, invalid file extensions, truncated uploads.
+- **Layer 2 (Server Deep Binary Analysis):** Rejection of malformed ESP32 headers, wrong architecture chip IDs, corrupted segment lengths, and tampered/invalid SHA-256 signatures before network distribution.
+- **Layer 3 (Device Hardware Bootloader):** WiFi dropouts during active streaming, dual-partition (`ota_0`/`ota_1`) automatic rollback, and watchdog timer recovery.
 
 ---
 
