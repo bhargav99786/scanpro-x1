@@ -35,12 +35,13 @@
 
 #define AUDIO_SAMPLE_RATE 16000
 #define AUDIO_MCLK_MULT   256
-#define AUDIO_DEFAULT_VOL 90
+#define AUDIO_DEFAULT_VOL 100
 #define MIC_GAIN_DB       30.0f
 
 // ---------- Wi-Fi & MQTT Fallback Config ----------
 #define DEFAULT_WIFI_SSID "waveshare"
 #define DEFAULT_WIFI_PASS "12345678"
-#define DEFAULT_MQTT_HOST "192.168.0.112"
+#define DEFAULT_MQTT_HOST "192.168.0.113"
 #define DEFAULT_MQTT_PORT 1883
 #define DEVICE_ID         "scanpro-test-01"
+#define FIRMWARE_VERSION  "v2.0.0-OTA"

@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Format Timestamp
     function formatTime(ts) {
         const date = new Date(ts);
-        return date.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second:'2-digit' }) + 
-               '.' + date.getMilliseconds().toString().padStart(3, '0');
+        return date.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) +
+            '.' + date.getMilliseconds().toString().padStart(3, '0');
     }
 
     // WebSocket Connection
@@ -66,36 +66,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    let lastRenderState = "";
     function renderDevices(devicesObj) {
         cachedDevices = devicesObj;
+
+        const renderState = Object.keys(devicesObj).map(id => `${id}:${devicesObj[id].status}:${devicesObj[id].user}:${devicesObj[id].version}`).join('|');
+        if (renderState === lastRenderState) return;
+        lastRenderState = renderState;
+
         const grid = document.getElementById('devices-grid');
         if (!grid) return;
         grid.innerHTML = '';
-        
+
         const targetSelect = document.getElementById('intercom-target-device');
+        const otaTargetGrid = document.getElementById('ota-target-grid');
+
         if (targetSelect) {
             const currentVal = targetSelect.value;
+            let otaCurrentVals = ['all'];
+            const hiddenTarget = document.getElementById('ota-target-hidden');
+            if (hiddenTarget && hiddenTarget.value) {
+                otaCurrentVals = hiddenTarget.value.split(',');
+            }
+
             targetSelect.innerHTML = '<option value="all">Broadcast (All Devices)</option>';
+            if (otaTargetGrid) {
+                const isAll = otaCurrentVals.includes('all');
+                otaTargetGrid.innerHTML = `
+                    <div class="ota-device-card ${isAll ? 'active-ota-card' : ''}" data-val="all" style="display: flex; flex-direction: column; padding: 12px 16px; background: rgba(13, 21, 53, ${isAll ? '0.6' : '0.4'}); border: 2px solid ${isAll ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.1)'}; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <strong style="color: white; font-size: 1.05rem; margin-bottom: 4px;">All Active Devices (Broadcast)</strong>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Send to every connected scanner</span>
+                    </div>
+                `;
+            }
+
             Object.keys(devicesObj).forEach(dId => {
                 const rawUser = devicesObj[dId].user;
                 const devUser = (rawUser && rawUser !== 'Unassigned' && rawUser !== 'No Login') ? rawUser : 'No Login';
+                const fwVer = devicesObj[dId].version || 'v1.0.0';
+
                 targetSelect.innerHTML += `<option value="${dId}">${dId} (${devUser})</option>`;
+
+                if (otaTargetGrid && devicesObj[dId].status === 'online') {
+                    const isChecked = otaCurrentVals.includes(dId);
+                    otaTargetGrid.innerHTML += `
+                        <div class="ota-device-card ${isChecked ? 'active-ota-card' : ''}" data-val="${dId}" style="display: flex; flex-direction: column; padding: 12px 16px; background: rgba(13, 21, 53, ${isChecked ? '0.6' : '0.4'}); border: 2px solid ${isChecked ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.1)'}; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                            <strong style="color: white; font-size: 1.05rem; margin-bottom: 4px;">${dId}</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">User: ${devUser} | Version: <span style="color: var(--accent-cyan); font-weight: bold;">${fwVer}</span></span>
+                        </div>
+                    `;
+                }
             });
+
             if (Array.from(targetSelect.options).some(opt => opt.value === currentVal)) {
                 targetSelect.value = currentVal;
             }
         }
-        
+
+        let firstDevId = null;
+
         Object.entries(devicesObj).forEach(([deviceId, info]) => {
+            if (!firstDevId) firstDevId = deviceId;
             const card = document.createElement('div');
-            card.className = 'stat-card highlight';
+            card.className = 'stat-card highlight device-card';
+            card.setAttribute('data-device-id', deviceId);
             card.style.position = 'relative';
+            card.style.cursor = 'pointer';
+
             const userDisplay = (info.user && info.user !== 'Unassigned' && info.user !== 'No Login')
                 ? `<strong style="color: white">${info.user}</strong>`
                 : `<span style="color: var(--accent-saffron); font-weight: 600; background: rgba(255,170,0,0.15); padding: 2px 8px; border-radius: 4px;">No Login</span>`;
 
+            const fwVerDisplay = info.version ? `<span style="float:right; font-size: 0.8rem; background: rgba(0,212,255,0.1); padding: 2px 6px; border-radius: 4px; color: var(--accent-cyan);">${info.version}</span>` : '';
+
             card.innerHTML = `
-                <h3 class="stat-title" style="color: var(--accent-cyan)">🟢 Online</h3>
+                <h3 class="stat-title" style="color: var(--accent-cyan)">🟢 Online ${fwVerDisplay}</h3>
                 <div class="stat-value mono" style="font-size: 1.2rem; margin-bottom: 8px">${deviceId}</div>
                 <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px">User: ${userDisplay}</div>
                 <button class="talk-to-device-btn btn-primary" data-device="${deviceId}" style="width: 100%; padding: 6px 12px; font-size: 0.85rem; background: var(--accent-cyan); color: #040812; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -105,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             grid.appendChild(card);
         });
-        
+
         populateAssigneeDropdown(); // Update task assignment dropdown with latest devices
     }
 
@@ -127,19 +172,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let filteredTasks = [];
+
     function renderTasks(tasksArr) {
-        cachedTasks = tasksArr;
+        if (tasksArr) cachedTasks = tasksArr;
+
+        const filterTime = document.getElementById('task-filter-time') ? document.getElementById('task-filter-time').value : 'all';
+        const filterUser = document.getElementById('task-filter-user') ? document.getElementById('task-filter-user').value : 'all';
+
+        const now = new Date();
+        let cutoffTime = 0;
+        let isCustom = filterTime === 'custom';
+
+        if (filterTime === 'today') {
+            cutoffTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        } else if (filterTime === 'month') {
+            cutoffTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        } else if (filterTime === 'year') {
+            cutoffTime = new Date(now.getFullYear(), 0, 1).getTime();
+        }
+
+        const customFrom = document.getElementById('task-filter-date-from') ? new Date(document.getElementById('task-filter-date-from').value).getTime() : 0;
+        const customTo = document.getElementById('task-filter-date-to') ? new Date(document.getElementById('task-filter-date-to').value).getTime() + 86400000 : 0;
+
+        let allTasks = [...cachedTasks].reverse();
+
+        filteredTasks = allTasks.filter(task => {
+            const assignee = task.assignee || task.device_id || 'Unassigned';
+
+            if (filterUser !== 'all' && assignee !== filterUser && assignee !== 'Unassigned') return false;
+
+            const taskTime = parseInt(task.id);
+            if (!isNaN(taskTime)) {
+                if (isCustom) {
+                    if (customFrom && taskTime < customFrom) return false;
+                    if (customTo && taskTime >= customTo) return false;
+                } else if (filterTime !== 'all' && taskTime < cutoffTime) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
         const tbody = document.getElementById('task-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
-        [...tasksArr].reverse().forEach(task => {
+        filteredTasks.forEach(task => {
             const tr = document.createElement('tr');
-            
+
             const isComplete = task.status === 'complete';
-            const statusHtml = isComplete 
+            const statusHtml = isComplete
                 ? '<span class="badge" style="background: var(--accent-success, #00e676); color: white">Completed</span>'
                 : `<span class="badge" style="background: var(--accent-blue); color: white">${task.prio}</span>`;
-                
+
             tr.innerHTML = `
                 <td class="mono">${task.assignee || task.device_id || 'Unassigned'}</td>
                 <td style="font-weight: 600; ${isComplete ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${task.name}</td>
@@ -154,6 +239,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const taskFilterTime = document.getElementById('task-filter-time');
+    const taskFilterUser = document.getElementById('task-filter-user');
+    const customDateContainer = document.getElementById('custom-date-container');
+    const filterDateFrom = document.getElementById('task-filter-date-from');
+    const filterDateTo = document.getElementById('task-filter-date-to');
+
+    if (taskFilterTime) {
+        taskFilterTime.addEventListener('change', () => {
+            if (taskFilterTime.value === 'custom') {
+                if (customDateContainer) customDateContainer.style.display = 'flex';
+            } else {
+                if (customDateContainer) customDateContainer.style.display = 'none';
+            }
+            renderTasks();
+        });
+    }
+    if (taskFilterUser) taskFilterUser.addEventListener('change', () => renderTasks());
+    if (filterDateFrom) filterDateFrom.addEventListener('change', () => renderTasks());
+    if (filterDateTo) filterDateTo.addEventListener('change', () => renderTasks());
+
     function populateAssigneeDropdown() {
         const select = document.getElementById('task-assignee');
         if (!select) return;
@@ -161,10 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cachedUsers.forEach(u => {
             select.innerHTML += `<option value="${u.name}">${u.name} (${u.role})</option>`;
         });
-        
+
         select.innerHTML += '<option disabled>──────────</option>';
         select.innerHTML += '<option disabled>-- Active Devices --</option>';
-        
+
         for (const devId in cachedDevices) {
             const devUser = cachedDevices[devId].user;
             select.innerHTML += `<option value="${devId}">${devId} (${devUser})</option>`;
@@ -185,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderUsers(usersArr) {
         cachedUsers = usersArr;
         populateAssigneeDropdown();
-        
+
         // Populate Attendance User Filter if it exists
         const attFilterUser = document.getElementById('att-filter-user');
         if (attFilterUser) {
@@ -195,6 +300,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 attFilterUser.innerHTML += `<option value="${u.name}">${u.name}</option>`;
             });
             attFilterUser.value = currentVal;
+        }
+
+        // Populate Task Manager User Filter if it exists
+        const taskFilterUser = document.getElementById('task-filter-user');
+        if (taskFilterUser) {
+            const currentVal = taskFilterUser.value;
+            taskFilterUser.innerHTML = '<option value="all">All Users</option>';
+            usersArr.forEach(u => {
+                taskFilterUser.innerHTML += `<option value="${u.name}">${u.id} - ${u.name}</option>`;
+            });
+            taskFilterUser.value = currentVal;
         }
 
         const tbody = document.getElementById('user-table-body');
@@ -236,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('user-name').value = editBtn.getAttribute('data-name');
                 document.getElementById('user-role').value = editBtn.getAttribute('data-role');
                 document.getElementById('user-pin').value = editBtn.getAttribute('data-pin');
-                
+
                 const title = document.getElementById('user-form-title');
                 if (title) title.textContent = `Modify User (${editBtn.getAttribute('data-id')})`;
                 const btn = document.getElementById('user-submit-btn');
@@ -279,28 +395,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAttendance() {
         const tbody = document.getElementById('attendance-table-body');
         if (!tbody) return;
-        
+
         const filterPeriod = document.getElementById('att-filter-period').value;
         const filterUser = document.getElementById('att-filter-user').value;
-        
+
         const now = new Date();
         let cutoffTime = 0;
         if (filterPeriod === 'today') {
             cutoffTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         } else if (filterPeriod === 'week') {
             const day = now.getDay() || 7; // Get current day number, converting Sun. to 7
-            if(day !== 1) now.setHours(-24 * (day - 1)); // Set to previous Monday
+            if (day !== 1) now.setHours(-24 * (day - 1)); // Set to previous Monday
             cutoffTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         } else if (filterPeriod === 'month') {
             cutoffTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
         }
-        
+
         // Combine history and active
         let allLogs = [...cachedAttendance.active, ...cachedAttendance.history];
-        
+
         // Sort descending by loginTime
         allLogs.sort((a, b) => b.loginTime - a.loginTime);
-        
+
         let filteredLogs = allLogs.filter(log => {
             if (filterUser !== 'all' && log.userName !== filterUser) return false;
             if (filterPeriod !== 'all' && log.loginTime < cutoffTime) return false;
@@ -309,13 +425,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let totalMs = 0;
         let hasActive = false;
-        
+
         // Group logs by Date and User
         const groupedLogs = {};
         filteredLogs.forEach(log => {
             const dateStr = new Date(log.loginTime).toLocaleDateString();
             const key = dateStr + '_' + log.userName;
-            
+
             let duration = log.durationMs;
             let isActive = false;
             if (log.status === 'Active') {
@@ -324,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hasActive = true;
             }
             totalMs += duration;
-            
+
             if (!groupedLogs[key]) {
                 groupedLogs[key] = {
                     dateStr: dateStr,
@@ -335,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     latestLogin: log.loginTime
                 };
             }
-            
+
             groupedLogs[key].sessions++;
             groupedLogs[key].totalDuration += duration;
             if (isActive) groupedLogs[key].isActive = true;
@@ -343,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupedLogs[key].latestLogin = log.loginTime;
             }
         });
-        
+
         // Apply Overrides
         const overrides = cachedAttendance.overrides || {};
         Object.keys(groupedLogs).forEach(key => {
@@ -352,27 +468,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupedLogs[key].isAdjusted = true;
             }
         });
-        
+
         // Convert back to array and sort by latest login
         const summaryRows = Object.values(groupedLogs).sort((a, b) => b.latestLogin - a.latestLogin);
-        
+
         tbody.innerHTML = '';
         summaryRows.forEach(summary => {
             const tr = document.createElement('tr');
-            
+
             let activeIndicator = '';
             let statusBadge = '<span class="badge" style="background: var(--bg-dark); color: var(--text-secondary); border: 1px solid var(--border-color);">Completed</span>';
             let durationText = formatDuration(summary.totalDuration);
-            
+
             if (summary.isAdjusted) {
                 durationText += ' <span style="font-size: 0.7em; color: var(--text-secondary);">(Adjusted)</span>';
             }
-            
+
             if (summary.isActive) {
                 activeIndicator = `<span class="status-indicator connected" style="display:inline-block; margin-right:6px; width:8px; height:8px; animation: pulse 2s infinite;" title="Online"></span>`;
                 statusBadge = '<span class="badge" style="background: rgba(0, 212, 255, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">Active</span>';
             }
-            
+
             tr.innerHTML = `
                 <td>${summary.dateStr}</td>
                 <td>${activeIndicator}${summary.userName}</td>
@@ -385,12 +501,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             tbody.appendChild(tr);
         });
-        
+
         const totalSessionsEl = document.getElementById('att-total-sessions');
         const totalHoursEl = document.getElementById('att-total-hours');
         if (totalSessionsEl) totalSessionsEl.textContent = filteredLogs.length;
         if (totalHoursEl) totalHoursEl.textContent = formatDuration(totalMs);
-        
+
         if (attendanceInterval) clearInterval(attendanceInterval);
         if (hasActive) {
             attendanceInterval = setInterval(renderAttendance, 60000);
@@ -401,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attFilterUser = document.getElementById('att-filter-user');
     if (attFilterPeriod) attFilterPeriod.addEventListener('change', renderAttendance);
     if (attFilterUser) attFilterUser.addEventListener('change', renderAttendance);
-    
+
     // Attendance Adjustment Listener
     const attendanceTableBody = document.getElementById('attendance-table-body');
     if (attendanceTableBody) {
@@ -418,14 +534,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ key, durationMs })
                     })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            loadAttendance(); // reload data to show adjustment
-                        } else {
-                            alert('Failed to adjust attendance');
-                        }
-                    });
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                loadAttendance(); // reload data to show adjustment
+                            } else {
+                                alert('Failed to adjust attendance');
+                            }
+                        });
                 }
             }
         });
@@ -493,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('sku').value = editBtn.getAttribute('data-sku');
                 document.getElementById('name').value = editBtn.getAttribute('data-name');
                 document.getElementById('qty').value = editBtn.getAttribute('data-qty');
-                
+
                 const btn = document.querySelector('#inventory-form button[type="submit"]');
                 if (btn) btn.textContent = 'Update Product';
             }
@@ -504,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.getElementById('scan-table-body');
         const tr = document.createElement('tr');
         if (animate) tr.classList.add('new-row');
-        
+
         tr.innerHTML = `
             <td class="mono">${formatTime(scan.ts)}</td>
             <td class="mono">${scan.device_id}</td>
@@ -512,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td>${scan.product_name || 'Unknown Product'}</td>
             <td class="mono" style="color: var(--text-secondary); font-size: 0.8rem;">${scan.uuid}</td>
         `;
-        
+
         tbody.insertBefore(tr, tbody.firstChild);
 
         // Keep table size manageable
@@ -539,41 +655,110 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sku, name, qty })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // Reset form
-                document.getElementById('inventory-form').reset();
-                
-                // Show a quick success visual
-                const btn = e.target.querySelector('button');
-                const origText = btn.textContent;
-                btn.textContent = 'Saved!';
-                btn.style.background = 'var(--accent-saffron)';
-                setTimeout(() => {
-                    btn.textContent = 'Save Product';
-                    btn.style.background = '';
-                }, 1500);
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset form
+                    document.getElementById('inventory-form').reset();
+
+                    // Show a quick success visual
+                    const btn = e.target.querySelector('button');
+                    const origText = btn.textContent;
+                    btn.textContent = 'Saved!';
+                    btn.style.background = 'var(--accent-saffron)';
+                    setTimeout(() => {
+                        btn.textContent = 'Save Product';
+                        btn.style.background = '';
+                    }, 1500);
+                }
+            });
     });
+
+    // Inventory CSV Upload
+    const invCsvUpload = document.getElementById('inv-csv-upload');
+    if (invCsvUpload) {
+        invCsvUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                if (lines.length < 2) {
+                    alert('CSV file is empty or missing headers.');
+                    invCsvUpload.value = '';
+                    return;
+                }
+
+                // Detect headers
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+                let skuIdx = headers.findIndex(h => h === 'sku' || h === 'barcode' || h.includes('sku') || h.includes('code'));
+                let nameIdx = headers.findIndex(h => h === 'name' || h === 'product name' || h.includes('name') || h.includes('title') || h.includes('item'));
+                let qtyIdx = headers.findIndex(h => h === 'qty' || h === 'quantity' || h.includes('qty') || h.includes('count') || h.includes('stock'));
+
+                // Fallback default column order if headers not matched
+                if (skuIdx === -1) skuIdx = 0;
+                if (nameIdx === -1) nameIdx = 1;
+                if (qtyIdx === -1) qtyIdx = 2;
+
+                const items = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(',').map(cell => cell.trim().replace(/^["']|["']$/g, ''));
+                    if (row.length <= Math.max(skuIdx, nameIdx)) continue;
+                    const sku = row[skuIdx];
+                    if (!sku) continue;
+                    const name = row[nameIdx] || 'Unknown Item';
+                    const qty = parseInt(row[qtyIdx]) || 0;
+                    items.push({ sku, name, qty });
+                }
+
+                if (items.length === 0) {
+                    alert('No valid inventory items found in CSV.');
+                    invCsvUpload.value = '';
+                    return;
+                }
+
+                fetch('/api/inventory/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Successfully imported ${data.count} inventory items!`);
+                    } else {
+                        alert('Error importing inventory: ' + (data.error || 'Unknown error'));
+                    }
+                    invCsvUpload.value = '';
+                })
+                .catch(err => {
+                    console.error('CSV upload error:', err);
+                    alert('Failed to upload CSV: ' + err.message);
+                    invCsvUpload.value = '';
+                });
+            };
+            reader.readAsText(file);
+        });
+    }
 
     // Task Items Logic
     const addTaskItemBtn = document.getElementById('add-task-item-btn');
     const taskItemsContainer = document.getElementById('task-items-container');
-    
+
     if (addTaskItemBtn && taskItemsContainer) {
         addTaskItemBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'task-item-row';
             row.style.display = 'flex';
             row.style.gap = '8px';
-            
+
             let options = '<option value="">-- Select Item --</option>';
             cachedInventory.forEach(inv => {
                 options += `<option value="${inv.sku}">${inv.name} (${inv.sku})</option>`;
             });
-            
+
             row.innerHTML = `
                 <select class="item-sku" style="flex: 1; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;" required>
                     ${options}
@@ -584,11 +769,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <button type="button" class="remove-item-btn" style="background: rgba(255,51,85,0.15); border: 1px solid var(--accent-danger); color: var(--accent-danger); cursor: pointer; border-radius: 4px; padding: 4px 8px;">X</button>
             `;
-            
+
             const skuSelect = row.querySelector('.item-sku');
             const qtyInput = row.querySelector('.item-qty');
             const qtyHint = row.querySelector('.qty-hint');
-            
+
             skuSelect.addEventListener('change', () => {
                 const selectedSku = skuSelect.value;
                 const invItem = cachedInventory.find(i => i.sku === selectedSku);
@@ -603,14 +788,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     qtyHint.textContent = '';
                 }
             });
-            
+
             row.querySelector('.remove-item-btn').addEventListener('click', () => row.remove());
             taskItemsContainer.appendChild(row);
         });
     }
 
     const taskResetBtn = document.getElementById('task-form-reset');
-    
+
     function resetTaskForm() {
         document.getElementById('task-form').reset();
         document.getElementById('task-id').value = '';
@@ -640,15 +825,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const taskId = editBtn.getAttribute('data-id');
                 const task = cachedTasks.find(t => t.id === taskId);
                 if (!task) return;
-                
+
                 document.getElementById('task-id').value = task.id;
                 document.getElementById('task-assignee').value = task.assignee || task.device_id || '';
                 document.getElementById('task-name').value = task.name;
                 document.getElementById('task-prio').value = task.prio;
-                
+
                 // Clear items
                 taskItemsContainer.innerHTML = '';
-                
+
                 if (task.items) {
                     task.items.forEach(item => {
                         addTaskItemBtn.click();
@@ -656,12 +841,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const skuSelect = newRow.querySelector('.item-sku');
                         skuSelect.value = item.sku;
                         skuSelect.dispatchEvent(new Event('change'));
-                        
+
                         const qtyInput = newRow.querySelector('.item-qty');
                         qtyInput.value = item.target_qty;
                     });
                 }
-                
+
                 const btn = document.getElementById('task-submit-btn');
                 if (btn) btn.textContent = 'Update Task';
                 if (taskResetBtn) taskResetBtn.style.display = 'block';
@@ -696,21 +881,87 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assignee, name, prio, items })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                resetTaskForm();
-                const btn = document.getElementById('task-submit-btn');
-                const origText = btn.textContent;
-                btn.textContent = taskId ? 'Updated!' : 'Assigned!';
-                btn.style.background = 'var(--accent-saffron)';
-                setTimeout(() => {
-                    btn.textContent = origText;
-                    btn.style.background = '';
-                }, 1500);
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    resetTaskForm();
+                    const btn = document.getElementById('task-submit-btn');
+                    const origText = btn.textContent;
+                    btn.textContent = taskId ? 'Updated!' : 'Assigned!';
+                    btn.style.background = 'var(--accent-saffron)';
+                    setTimeout(() => {
+                        btn.textContent = origText;
+                        btn.style.background = '';
+                    }, 1500);
+                }
+            });
+    });
+
+    // Task Export CSV
+    const exportCsvBtn = document.getElementById('task-export-csv');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+            if (!filteredTasks || filteredTasks.length === 0) {
+                alert('No tasks to export.');
+                return;
+            }
+            let csvContent = "ID,Assignee,Task Name,Priority,Status,Items Count\n";
+            filteredTasks.forEach(t => {
+                const row = [
+                    t.id,
+                    t.assignee || t.device_id || 'Unassigned',
+                    `"${(t.name || '').replace(/"/g, '""')}"`,
+                    t.prio,
+                    t.status,
+                    t.items ? t.items.length : 0
+                ].join(',');
+                csvContent += row + "\n";
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "tasks_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
+
+    // Task Export PDF
+    const exportPdfBtn = document.getElementById('task-export-pdf');
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', () => {
+            if (!filteredTasks || filteredTasks.length === 0) {
+                alert('No tasks to export.');
+                return;
+            }
+            if (window.jspdf && window.jspdf.jsPDF) {
+                const doc = new window.jspdf.jsPDF();
+                doc.text("Task Manager Export", 14, 15);
+                const tableColumn = ["ID", "Assignee", "Task Name", "Priority", "Status", "Items"];
+                const tableRows = [];
+                filteredTasks.forEach(t => {
+                    tableRows.push([
+                        t.id,
+                        t.assignee || t.device_id || 'Unassigned',
+                        t.name,
+                        t.prio,
+                        t.status,
+                        t.items ? t.items.length.toString() : "0"
+                    ]);
+                });
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: 20
+                });
+                doc.save('tasks_export.pdf');
+            } else {
+                alert('PDF generation library is still loading. Please try again in a moment.');
             }
         });
-    });
+    }
 
     // User Form Submit
     const userForm = document.getElementById('user-form');
@@ -727,21 +978,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, name, role, pin })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const btn = e.target.querySelector('button[type="submit"]');
-                    const origText = btn.textContent;
-                    btn.textContent = 'Saved!';
-                    btn.style.background = 'var(--accent-saffron)';
-                    setTimeout(() => {
-                        btn.textContent = 'Save User';
-                        btn.style.background = '';
-                        const title = document.getElementById('user-form-title');
-                        if (title) title.textContent = 'Create New User';
-                    }, 1500);
-                }
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const btn = e.target.querySelector('button[type="submit"]');
+                        const origText = btn.textContent;
+                        btn.textContent = 'Saved!';
+                        btn.style.background = 'var(--accent-saffron)';
+                        setTimeout(() => {
+                            btn.textContent = 'Save User';
+                            btn.style.background = '';
+                            const title = document.getElementById('user-form-title');
+                            if (title) title.textContent = 'Create New User';
+                        }, 1500);
+                    }
+                });
         });
     }
     // ==========================================
@@ -753,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpTag = document.getElementById('help-tag');
     const helpBox = document.getElementById('help-box');
     const closeHelpBox = document.getElementById('close-help-box');
-    
+
     if (helpTag) {
         helpTag.addEventListener('click', () => {
             helpBox.classList.remove('hidden');
@@ -763,14 +1014,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
     if (closeHelpBox) {
         closeHelpBox.addEventListener('click', () => {
             helpBox.classList.add('hidden');
             helpTag.classList.remove('hidden');
         });
     }
-    
+
     let audioWs = null;
     let audioContext = null;
     let mediaStream = null;
@@ -788,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         audioWs = new WebSocket(`${wsProtocol}//${window.location.host}/audio?client_type=pc&target_device=${encodeURIComponent(target)}`);
         audioWs.binaryType = 'arraybuffer';
-        
+
         audioWs.onopen = () => {
             const devLabel = target === 'all' ? 'All Devices' : target;
             intercomStatus.textContent = `Ready: ${devLabel}`;
@@ -796,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
             intercomIndicator.style.boxShadow = 'var(--glow-cyan)';
             if (pttBtn) pttBtn.disabled = false;
         };
-        
+
         audioWs.onclose = () => {
             intercomStatus.textContent = "Reconnecting audio...";
             intercomIndicator.style.background = 'var(--accent-saffron)';
@@ -804,9 +1055,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pttBtn) pttBtn.disabled = false; // Always keep button clickable for mic setup
             setTimeout(connectAudioWs, 3000);
         };
-        
+
         let nextPlayTime = 0;
-        
+
         // Browsers block audio until a user interaction occurs.
         document.addEventListener('click', () => {
             if (audioContext && audioContext.state === 'suspended') {
@@ -815,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }, { once: true });
-        
+
         // ESP32 Mic → PC Speaker: receive raw Mono 16-bit PCM at 16kHz and play it.
         audioWs.onmessage = async (event) => {
             if (!audioContext) {
@@ -889,18 +1140,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
             microphoneNode = audioContext.createMediaStreamSource(mediaStream);
-            
+
             scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
             microphoneNode.connect(scriptProcessor);
-            
+
             const dummyGain = audioContext.createGain();
             dummyGain.gain.value = 0;
             scriptProcessor.connect(dummyGain);
             dummyGain.connect(audioContext.destination);
-            
+
             scriptProcessor.onaudioprocess = (e) => {
                 if (!isRecording || !audioWs || audioWs.readyState !== WebSocket.OPEN) return;
-                
+
                 const inputData = e.inputBuffer.getChannelData(0);
                 const inputSampleRate = e.inputBuffer.sampleRate || 16000;
                 const targetSampleRate = 16000;
@@ -908,13 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const outputLength = Math.floor(inputData.length / ratio);
                 const outputBuffer = new Int16Array(outputLength);
                 const gain = 1.5;
-                
+
                 for (let i = 0; i < outputLength; i++) {
                     const inputIdx = Math.floor(i * ratio);
                     const sample = inputData[inputIdx] * gain;
                     outputBuffer[i] = Math.max(-32768, Math.min(32767, Math.floor(sample * 32768)));
                 }
-                
+
                 audioWs.send(outputBuffer.buffer);
             };
             return true;
@@ -922,7 +1173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Microphone access error:", err);
             intercomStatus.textContent = "Mic Blocked (Switch to HTTPS:3031)";
             intercomStatus.style.color = "var(--accent-danger)";
-            
+
             if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
                 const httpsUrl = `https://${location.hostname}:3031`;
                 alert("BROWSER SECURITY POLICY:\n\nChrome & Edge NEVER show microphone popups on http://" + location.hostname + ":3030.\n\nYou MUST use the HTTPS port (3031) for microphone access.\n\nClick OK to switch to https://" + location.hostname + ":3031 now.");
@@ -995,4 +1246,91 @@ document.addEventListener('DOMContentLoaded', () => {
             connectAudioWs(targetDev);
         });
     }
+
+    // OTA Update Form
+    const otaForm = document.getElementById('ota-form');
+    if (otaForm) {
+        otaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('ota-file');
+            const statusDiv = document.getElementById('ota-status');
+
+            if (!fileInput.files.length) return;
+
+            const formData = new FormData();
+            formData.append('firmware', fileInput.files[0]);
+
+            const hiddenTarget = document.getElementById('ota-target-hidden');
+            if (hiddenTarget && hiddenTarget.value) {
+                formData.append('targetDevice', hiddenTarget.value);
+            } else {
+                formData.append('targetDevice', 'all');
+            }
+
+            statusDiv.textContent = "Uploading firmware... Do not turn off devices.";
+
+            try {
+                const res = await fetch('/api/ota/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+
+                if (res.ok) {
+                    statusDiv.textContent = `Firmware uploaded successfully! Devices are now downloading from: ${result.url}`;
+                    statusDiv.style.color = "var(--accent-success)";
+                    otaForm.reset();
+                } else {
+                    statusDiv.textContent = `Error: ${result.error}`;
+                    statusDiv.style.color = "var(--accent-danger)";
+                }
+            } catch (err) {
+                statusDiv.textContent = "Upload failed: " + err.message;
+                statusDiv.style.color = "var(--accent-danger)";
+            }
+        });
+    }
+
+    // Custom OTA Target Selection Click Handler
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.ota-device-card');
+        if (card) {
+            const val = card.getAttribute('data-val');
+            const hidden = document.getElementById('ota-target-hidden');
+            if (!hidden) return;
+
+            let currentVals = hidden.value ? hidden.value.split(',') : [];
+
+            if (val === 'all') {
+                currentVals = ['all'];
+            } else {
+                currentVals = currentVals.filter(v => v !== 'all');
+                if (currentVals.includes(val)) {
+                    currentVals = currentVals.filter(v => v !== val);
+                } else {
+                    currentVals.push(val);
+                }
+
+                if (currentVals.length === 0) {
+                    currentVals = ['all'];
+                }
+            }
+
+            hidden.value = currentVals.join(',');
+
+            document.querySelectorAll('.ota-device-card').forEach(c => {
+                const cVal = c.getAttribute('data-val');
+                if (currentVals.includes(cVal)) {
+                    c.classList.add('active-ota-card');
+                    c.style.border = '2px solid var(--accent-cyan)';
+                    c.style.background = 'rgba(13, 21, 53, 0.6)';
+                } else {
+                    c.classList.remove('active-ota-card');
+                    c.style.border = '2px solid rgba(255,255,255,0.1)';
+                    c.style.background = 'rgba(13, 21, 53, 0.4)';
+                }
+            });
+        }
+    });
+
 });

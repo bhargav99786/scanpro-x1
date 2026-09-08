@@ -61,11 +61,11 @@ static void lvgl_touch_cb(lv_indev_drv_t *indev, lv_indev_data_t *data) {
       data->point.x = LCD_VER_RES - 1 - p.y;
       data->point.y = p.x;
     } else if (current_rotation == 0) { // 0° Portrait
-      data->point.x = p.x;
-      data->point.y = p.y;
-    } else if (current_rotation == 2) { // 180° Flipped Portrait
       data->point.x = LCD_HOR_RES - 1 - p.x;
       data->point.y = LCD_VER_RES - 1 - p.y;
+    } else if (current_rotation == 2) { // 180° Flipped Portrait
+      data->point.x = p.x;
+      data->point.y = p.y;
     }
   } else {
     data->state = LV_INDEV_STATE_REL;

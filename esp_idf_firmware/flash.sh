@@ -1,0 +1,1 @@
+/home/bhargav/Arduino/smart_barcode_scanner/flash.sh

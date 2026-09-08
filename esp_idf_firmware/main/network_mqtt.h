@@ -17,6 +17,7 @@ bool network_publish_scan(const std::string &sku);
  * @brief Check if Wi-Fi is connected
  */
 bool network_is_wifi_connected(void);
+bool network_is_server_connected(void);
 
 /**
  * @brief Save new Wi-Fi credentials to NVS and reconnect immediately
@@ -42,4 +43,5 @@ bool network_publish_device_status(bool is_online, const char *user);
  * @brief Publish task completion notification to MQTT topic device/{device_id}/task_complete
  */
 bool network_publish_task_complete(const char *task_id);
+bool network_publish_task_complete_payload(const char *task_id, const char *items_json_str);
 

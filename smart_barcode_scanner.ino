@@ -332,7 +332,7 @@ void setup() {
   extern WebSocketsClient audioWs;
   extern void audioWsEvent(WStype_t type, uint8_t * payload, size_t length);
   String audioPath = String("/audio?client_type=esp32&device_id=") + DEVICE_ID;
-  audioWs.begin("192.168.0.112", 3030, audioPath.c_str());
+  audioWs.begin("192.168.0.113", 3030, audioPath.c_str());
   audioWs.onEvent(audioWsEvent);
   audioWs.setReconnectInterval(5000);
 
@@ -379,6 +379,18 @@ void loop() {
       uiSetWifiStatus(LV_SYMBOL_WIFI " WiFi: Off");
     }
     uiUpdateConnScreen();
+
+    // Check server connection status transition
+    static bool wasServerConnected = false;
+    bool currentServerConnected = isServerConnected();
+    if (wasServerConnected && !currentServerConnected) {
+      Serial.println("[conn] Server disconnected -> clearing inventory and tasks");
+      global_inventory_count = 0;
+      current_task_count = 0;
+      update_inventory_ui();
+      update_tasks_ui();
+    }
+    wasServerConnected = currentServerConnected;
   }
 
   // Update battery level indicator every 5 seconds
@@ -397,56 +409,14 @@ void loop() {
       // QR format: "USER:<username>:<pin>"  e.g.  "USER:bhargav:1234"
       uiLoginViaScan(sku);
     } else {
-      if (active_task != NULL) {
-        // We are in Task Picking Mode
-        bool match_found = false;
-        bool all_done = true;
-        
-        for (int i = 0; i < active_task->item_count; i++) {
-          if (String(active_task->items[i].sku) == sku) {
-            match_found = true;
-            if (active_task->items[i].picked_qty < active_task->items[i].target_qty) {
-              active_task->items[i].picked_qty++;
-              beepSuccess();
-              update_task_detail_ui();
-            } else {
-              // Already fully picked this item
-              beepError();
-            }
-          }
-          if (active_task->items[i].picked_qty < active_task->items[i].target_qty) {
-            all_done = false;
-          }
-        }
-        
-        if (!match_found) {
-          beepError(); // Scanned item not in task
-        } else if (all_done) {
-          // Task completed!
-          beepStartup(); // Special sound
-          
-          if (mqtt.connected()) {
-            StaticJsonDocument<128> doc;
-            doc["task_id"] = active_task->id;
-            char payload[128];
-            serializeJson(doc, payload);
-            mqtt.publish(("device/" + String(DEVICE_ID) + "/task_complete").c_str(), payload);
-          }
-          
-          // Return to task list
-          active_task = NULL;
-          lv_scr_load_anim(scr_tasks, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
-        }
+      // ── All scan flows: open the +/- Quantity Adjuster screen ─────────────
+      beepSuccess();          // instant audio feedback
+      bleNotifyScan(sku);     // notify via BLE if connected
+      uiShowScanResult(sku);  // ALWAYS open the +/- adjuster after a scan
+      if (mqtt.connected()) {
+        publishScan(sku);
       } else {
-        // ── Normal product scan flow ─────────────────────────────────────────────
-        beepSuccess();          // instant audio feedback
-        bleNotifyScan(sku);     // notify via BLE if connected
-        uiShowScanResult(sku);
-        if (mqtt.connected()) {
-          publishScan(sku);
-        } else {
-          Serial.println("[scan] MQTT not connected - scan shown locally only");
-        }
+        Serial.println("[scan] MQTT not connected - scan shown locally only");
       }
     }
   }

@@ -541,7 +541,11 @@ static void lvgl_port_flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, 
                 xSemaphoreTake(disp_ctx->trans_sem, portMAX_DELAY);
             }
         } else {
-            esp_lcd_panel_draw_bitmap(disp_ctx->panel_handle, x_start, y_start, x_end + 1, y_end + 1, color_map);
+            esp_err_t draw_err = esp_lcd_panel_draw_bitmap(disp_ctx->panel_handle, x_start, y_start, x_end + 1, y_end + 1, color_map);
+            if (draw_err != ESP_OK) {
+                ESP_LOGE(TAG, "esp_lcd_panel_draw_bitmap failed: %d, releasing flush ready to prevent deadlock", draw_err);
+                lv_disp_flush_ready(drv);
+            }
         }
 
         if (disp_ctx->disp_type == LVGL_PORT_DISP_TYPE_RGB || (disp_ctx->disp_type == LVGL_PORT_DISP_TYPE_DSI

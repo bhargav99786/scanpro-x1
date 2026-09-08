@@ -21,18 +21,66 @@
 #define COLOR_SAFFRON   lv_color_hex(0xFF9933)   // Accent Saffron
 #define COLOR_NAVY_BLUE lv_color_hex(0x1D4ED8)   // Vibrant Navy Blue accent
 #define COLOR_NAVY      lv_color_hex(0x0A0E2A)   // Deep space dark
-#define COLOR_WHITE     lv_color_hex(0xE8F4FF)   // Cool white
-#define COLOR_BG        lv_color_hex(0x070C1F)   // Near-black space bg
-#define COLOR_CARD      lv_color_hex(0x0D1535)   // Dark card bg
-#define COLOR_CARD_BRD  lv_color_hex(0x1A2952)   // Card border
 #define COLOR_CYAN      lv_color_hex(0x00D4FF)   // Electric cyan accent
 #define COLOR_MUTE      lv_color_hex(0x4A6080)   // Dim blue-grey text
 #define COLOR_DANGER    lv_color_hex(0xFF3355)   // Neon red
 #define COLOR_DANGER_BG lv_color_hex(0x1A0010)   // Dark red bg
 #define COLOR_GREEN     COLOR_NAVY_BLUE          // Replaced neon green with Navy Blue
 
+#define COLOR_WHITE     lv_color_hex(0xE8F4FF)   // Cool white
+#define COLOR_BG        lv_color_hex(0x070C1F)   // Near-black space bg
+#define COLOR_CARD      lv_color_hex(0x0D1535)   // Dark card bg
+#define COLOR_CARD_BRD  lv_color_hex(0x1A2952)   // Card border
+
 // ---- Screens ----
-static lv_obj_t *scr_login, *scr_home, *scr_scan, *scr_tasks, *scr_inventory, *scr_conn, *scr_settings;
+static lv_obj_t *scr_login, *scr_home, *scr_scan, *scr_tasks, *scr_inventory, *scr_conn, *scr_settings, *scr_qty_adjust;
+
+// ---- Global pointers for responsive UI ----
+inline lv_obj_t *login_left_panel = NULL;
+inline lv_obj_t *login_right_panel = NULL;
+inline lv_obj_t *login_btn_submit = NULL;
+
+static void _global_screen_resize_cb(lv_event_t *e) {
+  lv_obj_t *scr = lv_event_get_target(e);
+  lv_coord_t w = lv_obj_get_width(scr);
+  lv_coord_t h = lv_obj_get_height(scr);
+  
+  if (w < 400) { // Portrait
+    if (scr == scr_login) {
+      if (login_left_panel) {
+        lv_obj_set_size(login_left_panel, 300, 210);
+        lv_obj_align(login_left_panel, LV_ALIGN_TOP_MID, 0, 260);
+      }
+      if (login_right_panel) {
+        lv_obj_set_size(login_right_panel, 300, 210);
+        lv_obj_align(login_right_panel, LV_ALIGN_TOP_MID, 0, 48);
+      }
+      if (login_btn_submit) {
+        lv_obj_set_width(login_btn_submit, 280);
+      }
+    }
+  } else { // Landscape
+    if (scr == scr_login) {
+      if (login_left_panel) {
+        lv_obj_set_size(login_left_panel, 226, 210);
+        lv_obj_align(login_left_panel, LV_ALIGN_TOP_LEFT, 8, 48);
+      }
+      if (login_right_panel) {
+        lv_obj_set_size(login_right_panel, 230, 210);
+        lv_obj_align(login_right_panel, LV_ALIGN_TOP_RIGHT, -8, 48);
+      }
+      if (login_btn_submit) {
+        lv_obj_set_width(login_btn_submit, 208);
+      }
+    }
+  }
+}
+
+inline lv_obj_t *label_qty_sku = NULL;
+inline lv_obj_t *label_qty_name = NULL;
+inline lv_obj_t *label_qty_val = NULL;
+inline String current_scan_adjust_sku = "";
+inline int current_scan_adjust_qty = 1;
 
 // ---- Login state ----
 inline bool      is_logged_in = false;
@@ -294,12 +342,12 @@ static lv_obj_t* build_nav_rail(lv_obj_t *parent, int active_index) {
   lv_obj_set_flex_flow(rail, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(rail, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-  const char *labels[5] = {"Home", "Scan", "Tasks", "Inv", "Setup"};
-  lv_event_cb_t cbs[5] = {nav_home_cb, nav_scan_cb, nav_tasks_cb, nav_inventory_cb, nav_conn_cb};
+  const char *labels[4] = {"Home", "Tasks", "Inv", "Setup"};
+  lv_event_cb_t cbs[4] = {nav_home_cb, nav_tasks_cb, nav_inventory_cb, nav_conn_cb};
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     lv_obj_t *btn = lv_btn_create(rail);
-    lv_obj_set_size(btn, 56, 50);
+    lv_obj_set_size(btn, 56, 62);
     lv_obj_set_style_radius(btn, 8, 0);
     if (i == active_index) {
       lv_obj_set_style_bg_color(btn, lv_color_hex(0x0D2545), 0);
@@ -349,7 +397,7 @@ static void build_home_screen() {
   lv_obj_set_style_text_font(hdr, &lv_font_montserrat_14, 0);
   lv_obj_align(hdr, LV_ALIGN_TOP_LEFT, 0, 0);
 
-  // 2x2 tile grid
+  // 2-row tile grid
   static lv_coord_t col_dsc[] = {150, 150, LV_GRID_TEMPLATE_LAST};
   static lv_coord_t row_dsc[] = {70, 70, LV_GRID_TEMPLATE_LAST};
   lv_obj_t *grid = lv_obj_create(content);
@@ -360,16 +408,15 @@ static void build_home_screen() {
   lv_obj_set_style_pad_all(grid, 0, 0);
   lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
 
-  struct TileDef { const char *label; lv_color_t accent; lv_event_cb_t cb; int col; int row; };
-  TileDef tiles[4] = {
-    {LV_SYMBOL_BARS "\nScan",       COLOR_CYAN,    nav_scan_cb,      0, 0},
-    {LV_SYMBOL_LIST    "\nTasks",     COLOR_GREEN,   nav_tasks_cb,     1, 0},
-    {LV_SYMBOL_LOOP    "\nInventory", COLOR_SAFFRON, nav_inventory_cb, 0, 1},
-    {LV_SYMBOL_SETTINGS"\nSetup",    COLOR_CYAN,    nav_conn_cb,      1, 1},
+  struct TileDef { const char *label; lv_color_t accent; lv_event_cb_t cb; int col; int row; int col_span; };
+  TileDef tiles[3] = {
+    {LV_SYMBOL_LIST    "\nTasks & Picking", COLOR_GREEN,   nav_tasks_cb,     0, 0, 2},
+    {LV_SYMBOL_LOOP    "\nInventory",       COLOR_SAFFRON, nav_inventory_cb, 0, 1, 1},
+    {LV_SYMBOL_SETTINGS"\nSetup",           COLOR_CYAN,    nav_conn_cb,      1, 1, 1},
   };
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 3; i++) {
     lv_obj_t *tile = lv_btn_create(grid);
-    lv_obj_set_grid_cell(tile, LV_GRID_ALIGN_STRETCH, tiles[i].col, 1, LV_GRID_ALIGN_STRETCH, tiles[i].row, 1);
+    lv_obj_set_grid_cell(tile, LV_GRID_ALIGN_STRETCH, tiles[i].col, tiles[i].col_span, LV_GRID_ALIGN_STRETCH, tiles[i].row, 1);
     lv_obj_set_style_bg_color(tile, COLOR_CARD, 0);
     lv_obj_set_style_border_color(tile, tiles[i].accent, 0);
     lv_obj_set_style_border_width(tile, 1, 0);
@@ -391,61 +438,10 @@ static void build_home_screen() {
 }
 
 // ============================================================================
-// B. SCAN
+// B. SCAN (Shifted into Tasks tab)
 // ============================================================================
 static void build_scan_screen() {
-  scr_scan = lv_obj_create(NULL);
-  lv_obj_set_style_bg_color(scr_scan, COLOR_BG, 0);
-  build_status_bar(scr_scan, "Scan");
-  build_nav_rail(scr_scan, 1);
-  lv_obj_t *content = build_content_area(scr_scan);
-
-  // Left: viewfinder placeholder
-  lv_obj_t *vf = lv_obj_create(content);
-  lv_obj_set_size(vf, 170, 200);
-  lv_obj_align(vf, LV_ALIGN_TOP_LEFT, 0, 0);
-  lv_obj_set_style_bg_color(vf, lv_color_hex(0x12161C), 0);
-  lv_obj_set_style_border_color(vf, COLOR_SAFFRON, 0);
-  lv_obj_set_style_border_width(vf, 2, 0);
-  lv_obj_set_style_radius(vf, 10, 0);
-  lv_obj_t *vf_label = lv_label_create(vf);
-  lv_label_set_text(vf_label, "Aim GM65\nat barcode");
-  lv_obj_set_style_text_color(vf_label, COLOR_GREEN, 0);
-  lv_obj_set_style_text_align(vf_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_center(vf_label);
-
-  // Right: result card + progress
-  lv_obj_t *card = lv_obj_create(content);
-  lv_obj_set_size(card, 220, 100);
-  lv_obj_align(card, LV_ALIGN_TOP_RIGHT, 0, 0);
-  lv_obj_set_style_bg_color(card, lv_color_hex(0xE6F4E3), 0);
-  lv_obj_set_style_border_color(card, COLOR_GREEN, 0);
-  lv_obj_set_style_border_width(card, 2, 0);
-  lv_obj_set_style_radius(card, 8, 0);
-
-  label_last_scan_sku = lv_label_create(card);
-  lv_label_set_text(label_last_scan_sku, "No scan yet");
-  lv_obj_set_style_text_color(label_last_scan_sku, COLOR_NAVY, 0);
-  lv_obj_align(label_last_scan_sku, LV_ALIGN_TOP_LEFT, 4, 4);
-  lv_label_set_long_mode(label_last_scan_sku, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(label_last_scan_sku, 210);
-
-  label_last_scan_flag = lv_label_create(card);
-  lv_label_set_text(label_last_scan_flag, "");
-  lv_obj_set_style_text_color(label_last_scan_flag, COLOR_GREEN, 0);
-  lv_obj_align(label_last_scan_flag, LV_ALIGN_BOTTOM_LEFT, 4, -4);
-
-  label_scan_progress = lv_label_create(content);
-  lv_label_set_text(label_scan_progress, "Progress: 0 / 0");
-  lv_obj_set_style_text_color(label_scan_progress, COLOR_MUTE, 0);
-  lv_obj_align(label_scan_progress, LV_ALIGN_TOP_RIGHT, 0, 108);
-
-  bar_scan_progress = lv_bar_create(content);
-  lv_obj_set_size(bar_scan_progress, 220, 10);
-  lv_obj_align(bar_scan_progress, LV_ALIGN_TOP_RIGHT, 0, 130);
-  lv_obj_set_style_bg_color(bar_scan_progress, COLOR_SAFFRON, LV_PART_INDICATOR);
-  lv_bar_set_range(bar_scan_progress, 0, 100);
-  lv_bar_set_value(bar_scan_progress, 0, LV_ANIM_OFF);
+  scr_scan = scr_tasks;
 }
 
 // ============================================================================
@@ -455,6 +451,15 @@ static void update_tasks_ui() {
   if (!tasks_content_ptr) return;
   lv_obj_clean(tasks_content_ptr); // Remove old rows
   
+  // Only display tasks when connected to the server
+  if (!isServerConnected()) {
+    lv_obj_t *empty = lv_label_create(tasks_content_ptr);
+    lv_label_set_text(empty, "Offline - Server disconnected");
+    lv_obj_set_style_text_color(empty, COLOR_MUTE, 0);
+    lv_obj_align(empty, LV_ALIGN_CENTER, 0, 0);
+    return;
+  }
+
   if (current_task_count == 0) {
     lv_obj_t *empty = lv_label_create(tasks_content_ptr);
     lv_label_set_text(empty, "No active tasks assigned.");
@@ -602,7 +607,7 @@ static void build_tasks_screen() {
   scr_tasks = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr_tasks, COLOR_BG, 0);
   build_status_bar(scr_tasks, "Tasks");
-  build_nav_rail(scr_tasks, 2);
+  build_nav_rail(scr_tasks, 1);
   tasks_content_ptr = build_content_area(scr_tasks);
   lv_obj_set_flex_flow(tasks_content_ptr, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_row(tasks_content_ptr, 6, 0);
@@ -610,9 +615,187 @@ static void build_tasks_screen() {
   update_tasks_ui();
 }
 
+// ============================================================================
+// B2. QUANTITY ADJUSTMENT SCREEN (+/- Tab after scanning)
+// ============================================================================
+static void qty_minus_cb(lv_event_t *e) {
+  if (current_scan_adjust_qty > 1) {
+    current_scan_adjust_qty--;
+    if (label_qty_val) {
+      lv_label_set_text(label_qty_val, String(current_scan_adjust_qty).c_str());
+    }
+  }
+}
+
+static void qty_plus_cb(lv_event_t *e) {
+  current_scan_adjust_qty++;
+  if (label_qty_val) {
+    lv_label_set_text(label_qty_val, String(current_scan_adjust_qty).c_str());
+  }
+}
+
+static void qty_cancel_cb(lv_event_t *e) {
+  _load_scr_direct(scr_tasks, "Tasks");
+  update_tasks_ui();
+}
+
+static void qty_confirm_cb(lv_event_t *e) {
+  if (current_scan_adjust_sku.length() == 0) {
+    _load_scr_direct(scr_tasks, "Tasks");
+    update_tasks_ui();
+    return;
+  }
+
+  // 1. Publish scan via MQTT
+  extern bool publishScan(const String &sku);
+  publishScan(current_scan_adjust_sku);
+
+  // 2. Update matching task items with adjusted quantity
+  bool item_matched = false;
+  if (active_task) {
+    for (int i = 0; i < active_task->item_count; i++) {
+      if (String(active_task->items[i].sku) == current_scan_adjust_sku) {
+        active_task->items[i].picked_qty += current_scan_adjust_qty;
+        item_matched = true;
+        break;
+      }
+    }
+  }
+  if (!item_matched) {
+    for (int t = 0; t < current_task_count; t++) {
+      for (int i = 0; i < current_tasks[t].item_count; i++) {
+        if (String(current_tasks[t].items[i].sku) == current_scan_adjust_sku) {
+          current_tasks[t].items[i].picked_qty += current_scan_adjust_qty;
+          item_matched = true;
+          break;
+        }
+      }
+      if (item_matched) break;
+    }
+  }
+
+  // 3. Update total scan stats
+  scan_counter += current_scan_adjust_qty;
+  if (label_scan_count_home) {
+    String txt = "Scans this session: " + String(scan_counter);
+    lv_label_set_text(label_scan_count_home, txt.c_str());
+  }
+
+  // 4. Load tasks view
+  _load_scr_direct(scr_tasks, "Tasks");
+  update_tasks_ui();
+}
+
+static void build_qty_adjust_screen() {
+  scr_qty_adjust = lv_obj_create(NULL);
+  lv_obj_set_style_bg_color(scr_qty_adjust, COLOR_BG, 0);
+  build_status_bar(scr_qty_adjust, "Quantity Adjust");
+
+  lv_obj_t *content = build_content_area(scr_qty_adjust);
+  lv_obj_set_flex_flow(content, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_style_pad_all(content, 12, 0);
+  lv_obj_set_style_pad_row(content, 10, 0);
+
+  // Header Card: Scanned Item Details
+  lv_obj_t *card = lv_obj_create(content);
+  lv_obj_set_size(card, LV_PCT(100), 75);
+  lv_obj_set_style_bg_color(card, COLOR_CARD, 0);
+  lv_obj_set_style_border_color(card, COLOR_CARD_BRD, 0);
+  lv_obj_set_style_border_width(card, 1, 0);
+  lv_obj_set_style_radius(card, 8, 0);
+  lv_obj_set_style_pad_all(card, 8, 0);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+
+  label_qty_name = lv_label_create(card);
+  lv_label_set_text(label_qty_name, "Scanned Item");
+  lv_obj_set_style_text_color(label_qty_name, COLOR_WHITE, 0);
+  lv_obj_set_style_text_font(label_qty_name, &lv_font_montserrat_16, 0);
+  lv_obj_align(label_qty_name, LV_ALIGN_TOP_LEFT, 4, 2);
+
+  label_qty_sku = lv_label_create(card);
+  lv_label_set_text(label_qty_sku, "SKU: ---");
+  lv_obj_set_style_text_color(label_qty_sku, COLOR_CYAN, 0);
+  lv_obj_set_style_text_font(label_qty_sku, &lv_font_montserrat_14, 0);
+  lv_obj_align(label_qty_sku, LV_ALIGN_BOTTOM_LEFT, 4, -2);
+
+  // Quantity Controls Box (- Qty +)
+  lv_obj_t *qty_ctrl_box = lv_obj_create(content);
+  lv_obj_set_size(qty_ctrl_box, LV_PCT(100), 95);
+  lv_obj_set_style_bg_color(qty_ctrl_box, COLOR_CARD, 0);
+  lv_obj_set_style_border_color(qty_ctrl_box, COLOR_CYAN, 0);
+  lv_obj_set_style_border_width(qty_ctrl_box, 1, 0);
+  lv_obj_set_style_radius(qty_ctrl_box, 8, 0);
+  lv_obj_clear_flag(qty_ctrl_box, LV_OBJ_FLAG_SCROLLABLE);
+
+  // Minus button (-)
+  lv_obj_t *btn_minus = lv_btn_create(qty_ctrl_box);
+  lv_obj_set_size(btn_minus, 80, 60);
+  lv_obj_align(btn_minus, LV_ALIGN_LEFT_MID, 16, 0);
+  lv_obj_set_style_bg_color(btn_minus, lv_color_hex(0x8B0000), 0);
+  lv_obj_set_style_radius(btn_minus, 8, 0);
+  lv_obj_add_event_cb(btn_minus, qty_minus_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_t *lbl_m = lv_label_create(btn_minus);
+  lv_label_set_text(lbl_m, LV_SYMBOL_MINUS);
+  lv_obj_set_style_text_font(lbl_m, &lv_font_montserrat_16, 0);
+  lv_obj_center(lbl_m);
+
+  // Quantity Value Display
+  label_qty_val = lv_label_create(qty_ctrl_box);
+  lv_label_set_text(label_qty_val, "1");
+  lv_obj_set_style_text_color(label_qty_val, COLOR_SAFFRON, 0);
+  lv_obj_set_style_text_font(label_qty_val, &lv_font_montserrat_16, 0);
+  lv_obj_align(label_qty_val, LV_ALIGN_CENTER, 0, 0);
+
+  // Plus button (+)
+  lv_obj_t *btn_plus = lv_btn_create(qty_ctrl_box);
+  lv_obj_set_size(btn_plus, 80, 60);
+  lv_obj_align(btn_plus, LV_ALIGN_RIGHT_MID, -16, 0);
+  lv_obj_set_style_bg_color(btn_plus, lv_color_hex(0x006400), 0);
+  lv_obj_set_style_radius(btn_plus, 8, 0);
+  lv_obj_add_event_cb(btn_plus, qty_plus_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_t *lbl_p = lv_label_create(btn_plus);
+  lv_label_set_text(lbl_p, LV_SYMBOL_PLUS);
+  lv_obj_set_style_text_font(lbl_p, &lv_font_montserrat_16, 0);
+  lv_obj_center(lbl_p);
+
+  // Bottom Action Row (Cancel / Confirm)
+  lv_obj_t *btn_row = lv_obj_create(content);
+  lv_obj_set_size(btn_row, LV_PCT(100), 55);
+  lv_obj_set_style_bg_color(btn_row, COLOR_BG, 0);
+  lv_obj_set_style_border_width(btn_row, 0, 0);
+  lv_obj_set_style_pad_all(btn_row, 0, 0);
+  lv_obj_clear_flag(btn_row, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t *btn_cancel = lv_btn_create(btn_row);
+  lv_obj_set_size(btn_cancel, 150, 45);
+  lv_obj_align(btn_cancel, LV_ALIGN_LEFT_MID, 5, 0);
+  lv_obj_set_style_bg_color(btn_cancel, lv_color_hex(0x3A3D4D), 0);
+  lv_obj_add_event_cb(btn_cancel, qty_cancel_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_t *lbl_c = lv_label_create(btn_cancel);
+  lv_label_set_text(lbl_c, "CANCEL");
+  lv_obj_set_style_text_font(lbl_c, &lv_font_montserrat_14, 0);
+  lv_obj_center(lbl_c);
+
+  lv_obj_t *btn_confirm = lv_btn_create(btn_row);
+  lv_obj_set_size(btn_confirm, 240, 45);
+  lv_obj_align(btn_confirm, LV_ALIGN_RIGHT_MID, -5, 0);
+  lv_obj_set_style_bg_color(btn_confirm, COLOR_NAVY_BLUE, 0);
+  lv_obj_add_event_cb(btn_confirm, qty_confirm_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_t *lbl_ok = lv_label_create(btn_confirm);
+  lv_label_set_text(lbl_ok, LV_SYMBOL_OK " CONFIRM QTY");
+  lv_obj_set_style_text_font(lbl_ok, &lv_font_montserrat_14, 0);
+  lv_obj_center(lbl_ok);
+}
+
 static void update_inventory_ui() {
   if (!inv_list) return;
   lv_obj_clean(inv_list);
+  
+  // Only display inventory items when connected to the server
+  if (!isServerConnected()) {
+    return;
+  }
+  
   const char *query = inv_search_ta ? lv_textarea_get_text(inv_search_ta) : "";
   
   for (int i = 0; i < global_inventory_count; i++) {
@@ -636,7 +819,7 @@ static void build_inventory_screen() {
   scr_inventory = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr_inventory, COLOR_BG, 0);
   build_status_bar(scr_inventory, "Inventory");
-  build_nav_rail(scr_inventory, 3);
+  build_nav_rail(scr_inventory, 2);
   lv_obj_t *content = build_content_area(scr_inventory);
 
   inv_search_ta = lv_textarea_create(content);
@@ -647,7 +830,7 @@ static void build_inventory_screen() {
   
   // Live search event
   static auto _inv_search_cb = [](lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
+    if (lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED) return;
     update_inventory_ui();
   };
   lv_obj_add_event_cb(inv_search_ta, _inv_search_cb, LV_EVENT_VALUE_CHANGED, NULL);
@@ -743,10 +926,14 @@ static void _mode_switch_cb(lv_event_t *e) {
     if (ble_active_panel) lv_obj_clear_flag(ble_active_panel, LV_OBJ_FLAG_HIDDEN);
     if (wcard_ref) lv_obj_set_style_border_color(wcard_ref, COLOR_GREEN, 0);
     if (label_conn_ble_detail) {
-      lv_label_set_text(label_conn_ble_detail, "BLE Mode Active\nDevice: ScanPro-X1");
+      char buf[64];
+      snprintf(buf, sizeof(buf), "BLE Mode Active\nDevice: %s", bleGetDeviceName());
+      lv_label_set_text(label_conn_ble_detail, buf);
     }
     if (label_ble_large_status) {
-      lv_label_set_text(label_ble_large_status, "Status: Advertising...\n\nDevice: ScanPro-X1\n\nLive Bluetooth scan streaming active.");
+      char buf[128];
+      snprintf(buf, sizeof(buf), "Status: Advertising...\n\nDevice: %s\n\nLive Bluetooth scan streaming active.", bleGetDeviceName());
+      lv_label_set_text(label_ble_large_status, buf);
     }
     uiSetWifiStatus(LV_SYMBOL_BLUETOOTH " BLE: Adv...");
   } else {
@@ -769,7 +956,7 @@ static void build_conn_screen() {
   scr_conn = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(scr_conn, COLOR_BG, 0);
   build_status_bar(scr_conn, "Connectivity");
-  conn_nav_rail_ptr = build_nav_rail(scr_conn, 4);
+  conn_nav_rail_ptr = build_nav_rail(scr_conn, 3);
   conn_content_ptr = build_content_area(scr_conn);
   lv_obj_t *content = conn_content_ptr;
 
@@ -809,7 +996,9 @@ static void build_conn_screen() {
   lv_obj_align(ble_banner_hdr, LV_ALIGN_TOP_MID, 0, 4);
 
   label_ble_large_status = lv_label_create(ble_active_panel);
-  lv_label_set_text(label_ble_large_status, "Status: Advertising...\n\nDevice: ScanPro-X1\n\nLive Bluetooth scan streaming active.");
+  char buf_ble_init[128];
+  snprintf(buf_ble_init, sizeof(buf_ble_init), "Status: Advertising...\n\nDevice: %s\n\nLive Bluetooth scan streaming active.", bleGetDeviceName());
+  lv_label_set_text(label_ble_large_status, buf_ble_init);
   lv_obj_set_style_text_color(label_ble_large_status, COLOR_NAVY, 0);
   lv_obj_set_style_text_font(label_ble_large_status, &lv_font_montserrat_12, 0);
   lv_label_set_long_mode(label_ble_large_status, LV_LABEL_LONG_WRAP);
@@ -1112,13 +1301,15 @@ static void _numpad_event_cb(lv_event_t *e) {
 
 static void build_login_screen() {
   scr_login = lv_obj_create(NULL);
-  lv_obj_set_size(scr_login, 480, 320);
+  lv_obj_set_size(scr_login, LV_PCT(100), LV_PCT(100));
+  lv_obj_add_event_cb(scr_login, _global_screen_resize_cb, LV_EVENT_SIZE_CHANGED, NULL);
   lv_obj_set_style_bg_color(scr_login, lv_color_hex(0x040812), 0);
   lv_obj_set_style_bg_opa(scr_login, LV_OPA_COVER, 0);
 
   // ── LEFT PANEL: Permanent Number Board (Keypad) ──────────────────────────
   lv_obj_t *left_panel = lv_obj_create(scr_login);
-  lv_obj_set_size(left_panel, 226, 260);
+  login_left_panel = left_panel;
+  lv_obj_set_size(left_panel, 226, 210);
   lv_obj_align(left_panel, LV_ALIGN_TOP_LEFT, 8, 48);
   lv_obj_set_style_bg_color(left_panel, lv_color_hex(0x080F25), 0);
   lv_obj_set_style_bg_opa(left_panel, LV_OPA_COVER, 0);
@@ -1143,7 +1334,7 @@ static void build_login_screen() {
 
   lv_obj_t *btnm = lv_btnmatrix_create(left_panel);
   lv_btnmatrix_set_map(btnm, numpad_map);
-  lv_obj_set_size(btnm, 210, 220);
+  lv_obj_set_size(btnm, 210, 180);
   lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
   lv_obj_set_style_bg_color(btnm, lv_color_hex(0x040812), 0);
   lv_obj_set_style_border_width(btnm, 0, 0);
@@ -1161,7 +1352,8 @@ static void build_login_screen() {
 
   // ── RIGHT PANEL: ID & Password Inputs ─────────────────────────────────────
   lv_obj_t *right_panel = lv_obj_create(scr_login);
-  lv_obj_set_size(right_panel, 230, 260);
+  login_right_panel = right_panel;
+  lv_obj_set_size(right_panel, 230, 210);
   lv_obj_align(right_panel, LV_ALIGN_TOP_RIGHT, -8, 48);
   lv_obj_set_style_bg_color(right_panel, lv_color_hex(0x080F25), 0);
   lv_obj_set_style_bg_opa(right_panel, LV_OPA_COVER, 0);
@@ -1243,6 +1435,7 @@ static void build_login_screen() {
 
   // Authenticate button
   lv_obj_t *btn_login = lv_btn_create(right_panel);
+  login_btn_submit = btn_login;
   lv_obj_set_size(btn_login, 208, 40);
   lv_obj_align(btn_login, LV_ALIGN_BOTTOM_MID, 0, 0);
   lv_obj_set_style_bg_color(btn_login, COLOR_SAFFRON, 0);
@@ -1309,9 +1502,9 @@ static void _load_scr_direct(lv_obj_t *target, const char *title) {
 
 static void nav_login_cb(lv_event_t *e)      { _load_scr_direct(scr_login, ""); }
 static void nav_home_cb(lv_event_t *e)       { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_home, "Home"); }
-static void nav_scan_cb(lv_event_t *e)       { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_scan, "Scan"); }
-static void nav_tasks_cb(lv_event_t *e)      { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_tasks, "Tasks"); }
-static void nav_inventory_cb(lv_event_t *e)  { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_inventory, "Inventory"); }
+static void nav_scan_cb(lv_event_t *e)       { if (!is_logged_in) { nav_login_cb(e); return; } update_tasks_ui(); _load_scr_direct(scr_tasks, "Tasks"); }
+static void nav_tasks_cb(lv_event_t *e)      { if (!is_logged_in) { nav_login_cb(e); return; } update_tasks_ui(); _load_scr_direct(scr_tasks, "Tasks"); }
+static void nav_inventory_cb(lv_event_t *e)  { if (!is_logged_in) { nav_login_cb(e); return; } update_inventory_ui(); _load_scr_direct(scr_inventory, "Inventory"); }
 static void nav_conn_cb(lv_event_t *e)       { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_conn, "Connectivity"); }
 static void nav_settings_cb(lv_event_t *e)   { if (!is_logged_in) { nav_login_cb(e); return; } _load_scr_direct(scr_settings, "Settings"); }
 
@@ -1325,11 +1518,12 @@ inline void uiInit() {
 
   build_login_screen();
   build_home_screen();
-  build_scan_screen();
   build_tasks_screen();
+  build_scan_screen();
   build_inventory_screen();
   build_conn_screen();
   build_settings_screen();
+  build_qty_adjust_screen();
   lv_scr_load(scr_login); // Start at login
 }
 
@@ -1382,39 +1576,58 @@ inline void uiUpdateConnScreen() {
   }
 
   if (bleIsConnected()) {
-    if (label_conn_ble_detail) lv_label_set_text(label_conn_ble_detail, "BLE Mode: Connected\nDevice: ScanPro-X1");
-    if (label_ble_large_status) lv_label_set_text(label_ble_large_status, "Status: Connected!\n\nDevice: ScanPro-X1\n\nLive Bluetooth barcode streaming ready.");
+    if (label_conn_ble_detail) {
+      char b[64]; snprintf(b, sizeof(b), "BLE Mode: Connected\nDevice: %s", bleGetDeviceName());
+      lv_label_set_text(label_conn_ble_detail, b);
+    }
+    if (label_ble_large_status) {
+      char b[128]; snprintf(b, sizeof(b), "Status: Connected!\n\nDevice: %s\n\nLive Bluetooth barcode streaming ready.", bleGetDeviceName());
+      lv_label_set_text(label_ble_large_status, b);
+    }
   } else if (bleIsAdvertising()) {
-    if (label_conn_ble_detail) lv_label_set_text(label_conn_ble_detail, "BLE Mode: Advertising...\nDevice: ScanPro-X1");
-    if (label_ble_large_status) lv_label_set_text(label_ble_large_status, "Status: Advertising...\n\nDevice: ScanPro-X1\n\nReady for client connection.");
+    if (label_conn_ble_detail) {
+      char b[64]; snprintf(b, sizeof(b), "BLE Mode: Advertising...\nDevice: %s", bleGetDeviceName());
+      lv_label_set_text(label_conn_ble_detail, b);
+    }
+    if (label_ble_large_status) {
+      char b[128]; snprintf(b, sizeof(b), "Status: Advertising...\n\nDevice: %s\n\nReady for client connection.", bleGetDeviceName());
+      lv_label_set_text(label_ble_large_status, b);
+    }
   } else {
     if (label_conn_ble_detail) lv_label_set_text(label_conn_ble_detail, "WiFi Mode Active\n(BLE Inactive)");
   }
 }
 
 inline void uiShowScanResult(const String &sku) {
-  scan_counter++;
-  if (label_last_scan_sku) {
+  current_scan_adjust_sku = sku;
+  current_scan_adjust_qty = 1;
+
+  String prod_name = "Scanned Item";
+  for (int i = 0; i < global_inventory_count; i++) {
+    if (String(global_inventory[i].sku) == sku) {
+      prod_name = global_inventory[i].name;
+      break;
+    }
+  }
+  if (prod_name == "Scanned Item") {
+    for (int t = 0; t < current_task_count; t++) {
+      for (int i = 0; i < current_tasks[t].item_count; i++) {
+        if (String(current_tasks[t].items[i].sku) == sku) {
+          prod_name = current_tasks[t].items[i].name;
+          break;
+        }
+      }
+    }
+  }
+
+  if (label_qty_name) lv_label_set_text(label_qty_name, prod_name.c_str());
+  if (label_qty_sku) {
     String txt = "SKU: " + sku;
-    lv_label_set_text(label_last_scan_sku, txt.c_str());
+    lv_label_set_text(label_qty_sku, txt.c_str());
   }
-  if (label_last_scan_flag) {
-    lv_label_set_text(label_last_scan_flag, "Matched - added to list");
-  }
-  if (label_scan_progress) {
-    String txt = "Progress: " + String(scan_counter) + " / " + String(scan_target);
-    lv_label_set_text(label_scan_progress, txt.c_str());
-  }
-  if (bar_scan_progress) {
-    int pct = (scan_target > 0) ? (int)((scan_counter * 100) / scan_target) : 0;
-    if (pct > 100) pct = 100;
-    lv_bar_set_value(bar_scan_progress, pct, LV_ANIM_ON);
-  }
-  if (label_scan_count_home) {
-    String txt = "Scans this session: " + String(scan_counter);
-    lv_label_set_text(label_scan_count_home, txt.c_str());
-  }
-  lv_scr_load(scr_scan);
+  if (label_qty_val) lv_label_set_text(label_qty_val, "1");
+
+  _load_scr_direct(scr_qty_adjust, "Quantity Adjust");
 }
 
 // ============================================================================

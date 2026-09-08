@@ -160,7 +160,7 @@ esp_err_t esp_axp2101_port_init(i2c_master_bus_handle_t bus_handle)
     // 500~1400mV, 50mV/step,2steps
     power.setDLDO2Voltage(3300);
 
-    power.enableDC1();
+    // power.enableDC1();
     power.enableDC2();
     power.enableDC3();
     power.enableDC4();
@@ -580,4 +580,10 @@ void pmu_isr_handler(void)
     }
     // Clear PMU Interrupt Status Register
     power.clearIrqStatus();
+}
+
+void esp_axp2101_power_off(void)
+{
+    ESP_LOGI(TAG, "Shutting down AXP2101 PMU...");
+    power.shutdown();
 }

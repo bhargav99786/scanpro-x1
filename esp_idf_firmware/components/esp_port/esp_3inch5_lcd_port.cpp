@@ -68,7 +68,8 @@ void esp_3inch5_display_port_init(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_
     buscfg.quadhd_io_num = -1;
     buscfg.max_transfer_sz = max_transfer_sz;
 
-    ESP_ERROR_CHECK(spi_bus_initialize(EXAMPLE_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    // We will initialize the SPI bus manually in display_port.cpp before the hardware reset!
+    // ESP_ERROR_CHECK(spi_bus_initialize(EXAMPLE_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
     // soft_reset_once();
     ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_panel_io_spi_config_t io_config = {};
@@ -76,14 +77,14 @@ void esp_3inch5_display_port_init(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_
     io_config.dc_gpio_num = EXAMPLE_PIN_LCD_DC;
     io_config.spi_mode = 0;
     io_config.pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ;
-    io_config.trans_queue_depth = 10;
+    io_config.trans_queue_depth = 30;
     io_config.on_color_trans_done = NULL;
     io_config.user_ctx = NULL;
     io_config.lcd_cmd_bits = 8;
     io_config.lcd_param_bits = 8;
     // Attach the LCD to the SPI bus
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)EXAMPLE_SPI_HOST, &io_config, io_handle));
-    soft_reset_once();
+    // soft_reset_once();
 
     esp_lcd_panel_dev_config_t panel_config = {};
     panel_config.reset_gpio_num = EXAMPLE_PIN_LCD_RST;

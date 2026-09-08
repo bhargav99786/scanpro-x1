@@ -1,0 +1,52 @@
+Test ID,Category,Test Scenario / Objective,Preconditions,Test Steps / Actions,Expected Result,Actual Result,Status
+TC-OTA-01,Normal Flow,Full OTA Update with stable Wi-Fi connection (Happy Path),"Scanner is online, battery >= 30%, connected to Wi-Fi 'Airlab', Server is running on port 3030.","1. Open Web UI http://<server-ip>:3030
+2. Navigate to OTA tab
+3. Upload 'firmware_ota_update.bin' targeting 'all'
+4. Observe device LCD screen and server console","Device receives MQTT trigger on 'config/ota', displays OTA screen with progress 0% -> 100%, server logs HTTP GET /firmware.bin (Status 200), device verifies sha256/magic, switches boot partition, and reboots smoothly.",Passed,PASSED
+TC-OTA-02,Normal Flow,Targeted OTA Trigger by Specific Device ID,Multiple scanners online (or default 'scanpro-test-01'). Server running.,"1. In Web UI OTA section, specify target device 'scanpro-test-01'
+2. Click Upload & Deploy
+3. Check server MQTT topic and device responses",Server publishes to 'device/scanpro-test-01/ota'. Only the specified target scanner begins OTA update; untargeted devices ignore the command.,,Ready to Test
+TC-OTA-03,Wi-Fi Resume,Single Wi-Fi Disconnect mid-transfer at ~50% and Auto-Resume,Scanner running resilient firmware. OTA update initiated.,"1. Initiate OTA update from Dashboard
+2. At ~50% progress, disable Wi-Fi AP or turn off router
+3. Observe LCD screen status for 10-20 seconds
+4. Re-enable Wi-Fi AP and observe reconnection","Screen immediately updates to 'Wi-Fi Lost (50%) / Waiting to reconnect...'. When Wi-Fi reconnects, screen shows 'Wi-Fi Recovered! / Resuming download...', device issues HTTP Range: bytes=X-, downloads remainder from 50% to 100%, and reboots.",Tested & Verified with new firmware,PASSED
+TC-OTA-04,Wi-Fi Resume,Wi-Fi Disconnect at high percentage (~75% - 85%),"OTA in progress, reaching final sector transfer.","1. Trigger OTA
+2. Disconnect Wi-Fi when progress bar reaches 75% - 80%
+3. Wait 15 seconds
+4. Reconnect Wi-Fi","Device catches disconnect within 4s timeout, pauses at 75%-80%, reconnects, sends 'Range: bytes=<75% offset>-', downloads last 20-25%, successfully passes esp_ota_end verification, reboots into new partition.",Tested & Verified with new firmware,PASSED
+TC-OTA-05,Wi-Fi Resume,Wi-Fi Disconnect at early stage (~10% - 20%),OTA in progress at the beginning of transfer.,"1. Trigger OTA
+2. Disconnect Wi-Fi almost immediately after start (10-15%)
+3. Reconnect Wi-Fi after 10 seconds","Device freezes progress at 10-15%, shows 'Wi-Fi Lost (15%)', reconnects, sends Range header from the partial offset, resumes smoothly without restarting from 0% if server honors Range.",,Ready to Test
+TC-OTA-06,Wi-Fi Resume,Multiple consecutive Wi-Fi drops (Multi-Interruption),Scanner running resilient firmware.,"1. Trigger OTA
+2. Disconnect Wi-Fi at 25% -> Wait 10s -> Reconnect (resumes to 30%)
+3. Disconnect Wi-Fi again at 65% -> Wait 10s -> Reconnect
+4. Let download complete to 100%","Device handles each disconnect cleanly: pauses, displays Wi-Fi lost status, resumes with updated Range offsets each time, completes download, verifies binary integrity, and boots properly.",,Ready to Test
+TC-OTA-07,Wi-Fi Resume,Transient network glitch / Weak RSSI drop (< 3 seconds),Scanner running OTA update.,"1. During OTA at ~40%, move scanner to fringe coverage or trigger brief Wi-Fi toggle (< 3s)
+2. Restore signal immediately","Read loop detects connection drop within 4s timeout, re-establishes HTTP connection using Range header without rebooting or crashing, and continues progress.",,Ready to Test
+TC-OTA-08,Edge Case,Extended Wi-Fi Outage exceeding maximum retries (> 3-5 mins),"OTA in progress, Wi-Fi AP is permanently powered down.","1. Trigger OTA
+2. Disconnect Wi-Fi at 40%
+3. Leave Wi-Fi off for > 5 minutes (exceeding MAX_RETRIES=180)","Device safely aborts OTA handle via esp_ota_abort(), displays 'Update Aborted! / Network Timeout' on screen, keeps existing boot partition untouched, and allows device to resume normal operation upon reboot.",,Ready to Test
+TC-OTA-09,Edge Case,Server rejects Range header (Responds HTTP 200 instead of 206),Server modified to ignore Range header or non-supporting proxy.,"1. Trigger OTA with simulated 200 OK on resume
+2. Drop Wi-Fi at 50% and reconnect","Device detects status_code == 200, logs warning 'Server did not honor Range', cleanly aborts ota_handle, calls esp_ota_begin to re-erase, resets progress to 0%, and downloads full image cleanly.",,Ready to Test
+TC-OTA-10,Edge Case,Three (3) Consecutive Resume Failures fallback to clean restart,Corrupted chunk or repeated TCP reset on Range requests.,1. Trigger OTA and force repeated Range request failures (>= 3 times),"Device triggers safety fallback: aborts ota_handle, resets total_bytes_written = 0, displays 'Restarting Download from 0%...', and restarts download cleanly from byte 0.",,Ready to Test
+TC-OTA-11,Edge Case,Power Loss / Battery Removal during OTA transfer,Scanner updating firmware at any percentage.,"1. During active OTA download at 50%, turn off power switch or unplug battery
+2. Wait 5 seconds
+3. Power device back on",Device reboots safely into existing valid app partition (ota_0). otadata remains pointing to current valid firmware. Device does NOT get bricked.,,Ready to Test
+TC-OTA-12,Edge Case,Corrupted / Invalid Firmware File Upload,User uploads an invalid non-ESP32 binary or truncated file.,"1. Upload a text file or truncated bin file via Web UI OTA form
+2. Device receives trigger and begins download","Device detects invalid magic byte (expected 0xE9) or esp_ota_end verification fails with ESP_ERR_OTA_VALIDATE_FAILED. Device displays 'Update Failed! / Image Corrupted', aborts write, and keeps current firmware.",,Ready to Test
+TC-OTA-13,UI Feedback,LCD Display & Animations during active OTA download,Scanner running resilient firmware.,"1. Trigger OTA
+2. Observe LCD display throughout the process","Screen loads 'scr_ota' with dark background, animated spinner rotating smoothly, percentage label matching progress bar (0% to 100%), and cyan bar filling continuously.",Verified working,PASSED
+TC-OTA-14,UI Feedback,LCD Display on Wi-Fi Disconnect,Active OTA download in progress.,"1. Disconnect Wi-Fi at 60%
+2. Observe screen text","Text changes from 'Downloading Update...' to 'Wi-Fi Lost (60%)
+Waiting to reconnect...'. Spinner continues or pauses without crash.",Verified working,PASSED
+TC-OTA-15,UI Feedback,LCD Display on Wi-Fi Recovery & Finalizing,Wi-Fi reconnecting after drop.,"1. Reconnect Wi-Fi
+2. Observe transition to 100% and reboot","Text updates to 'Wi-Fi Recovered!
+Resuming download...', resumes to 100%, changes to 'Verifying Image
+& Writing Boot...', then 'Update Complete!
+Rebooting now...' before soft restart.",Verified working,PASSED
+TC-OTA-16,Server & Protocol,Server-Side HTTP Request and Range Logging,Server running with updated server.js.,"1. Monitor server console (task logs)
+2. Perform normal OTA and resumed OTA","Initial request logs: '[OTA HTTP] Incoming GET /firmware.bin | Range: None'
+Resumed request logs: '[OTA HTTP] Incoming GET /firmware.bin | Range: bytes=XXXXXX-'
+Confirming server handles RFC 7233 HTTP 206 Partial Content.",Verified working,PASSED
+TC-OTA-17,Server & Protocol,Post-OTA Firmware Boot and Registration,Device completes OTA update and reboots.,"1. Observe device serial log and MQTT dashboard after reboot
+2. Check status topic 'device/<id>/status'","Device boots from newly updated partition (ota_1 or ota_0), initializes peripherals (Display, Audio, GM65, BLE, Wi-Fi), publishes online status to server with updated timestamp and credentials intact.",Verified working,PASSED

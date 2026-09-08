@@ -12,6 +12,7 @@
   "dependencies": {
     "express": "^5.2.1",
     "mqtt": "^5.15.2",
+    "multer": "^2.2.0",
     "ws": "^8.21.3"
   }
 }

@@ -9,4 +9,5 @@
 // extern XPowersPMU power;
 
 esp_err_t esp_axp2101_port_init(i2c_master_bus_handle_t bus_handle);
+void esp_axp2101_power_off(void);
 void pmu_isr_handler(void);

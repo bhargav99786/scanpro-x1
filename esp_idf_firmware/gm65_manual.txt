@@ -1,0 +1,3740 @@
+GM65 Bar Code Reader Module
+User Manual
+
+Hangzhou Grow Technology Co., Ltd
+V1.3
+Sept. 2016
+
+Catalog
+1 Introduction................................................................................................................................................................1
+1.1 Introduction.....................................................................................................................................................1
+1.2 Specification................................................................................................................................................... 1
+1.3 Dimension(mm).............................................................................................................................................. 2
+Control Panel................................................................................................................................................ 3
+Scan Area(testing in office (250 lux) )......................................................................................................... 3
+1.4 Setup Code...................................................................................................................................................... 4
+1.5 Reset................................................................................................................................................................4
+2 Communication interface...........................................................................................................................................5
+2.1 Series Communication Interface.................................................................................................................... 5
+2.2 USB Interface..................................................................................................................................................6
+2.3 USB Virtual Serial Port...................................................................................................................................6
+3 Read Mode................................................................................................................................................................. 7
+3.1 Continuous Mode............................................................................................................................................7
+3.2 Induction Mode...............................................................................................................................................8
+3.3 Manual Mode.................................................................................................................................................. 9
+3.4 Command Triggered Mode...........................................................................................................................10
+4 Lighting and Collimate............................................................................................................................................ 11
+4.1 Lighting......................................................................................................................................................... 11
+4.2 Collimation....................................................................................................................................................11
+5 Prompts.................................................................................................................................................................... 12
+5.1 Prompts Tone................................................................................................................................................ 12
+5.2 Decode successfully tone.............................................................................................................................12
+5.3 Decoding Prompt.......................................................................................................................................... 13
+5.4 Keyboard Settlement.................................................................................................................................... 13
+5.5 Image Flip..................................................................................................................................................... 13
+5.6 Read Version................................................................................................................................................. 14
+6 Data Edition............................................................................................................................................................. 15
+6.1 Prefix.............................................................................................................................................................15
+6.2 Suffix.............................................................................................................................................................16
+6.3 CODE ID...................................................................................................................................................... 16
+6.4 Tail.................................................................................................................................................................19
+6.5 Cut out Data.................................................................................................................................................. 19
+6.6 RF Information............................................................................................................................................. 21
+7 Bar code type enables/disable configuration........................................................................................................... 22
+7.1 All types of bar code can be decoded........................................................................................................... 22
+7.2 Bar code rotate.............................................................................................................................................. 22
+7.3 EAN13.......................................................................................................................................................... 22
+7.4 EAN8............................................................................................................................................................ 23
+7.5 UPCA............................................................................................................................................................ 23
+7.6 UPCE0.......................................................................................................................................................... 23
+7.7 UPCE1.......................................................................................................................................................... 23
+7.8 Code128........................................................................................................................................................ 23
+I
+
+7.9 Code39.......................................................................................................................................................... 24
+7.10 Code93........................................................................................................................................................ 24
+7.11 CodeBar...................................................................................................................................................... 25
+7.12 QR............................................................................................................................................................... 26
+7.13 Interleaved 2 of 5........................................................................................................................................ 26
+7.14 Industrial 25................................................................................................................................................ 26
+7.15 Matrix 2 of 5............................................................................................................................................... 27
+7.16 Code11........................................................................................................................................................ 27
+7.17 MSI............................................................................................................................................................. 28
+7.18 RSS............................................................................................................................................................. 28
+7.19 DM.............................................................................................................................................................. 29
+7.20 PDF417....................................................................................................................................................... 29
+8 Serial Port Instruction.............................................................................................................................................. 30
+8.1CRC Algorithm.............................................................................................................................................. 30
+8.2
+Read Zone Bit.......................................................................................................................................31
+8.3
+Write Zone Bit.......................................................................................................................................32
+8.4Save zone bit to EEPROM Command...........................................................................................................33
+8.5
+List of zone bit.......................................................................................................................................33
+9 Appendix A：Common serial port instruction........................................................................................................47
+10 Appendix B：Code ID List................................................................................................................................... 48
+11 Appendix C：ASCII.............................................................................................................................................. 49
+12 Appendix D：data code.........................................................................................................................................54
+13 Appendix E：Save or Cancel................................................................................................................................ 56
+
+II
+
+III
+
+1 Introduction
+1.1 Introduction
+MG65 Bar code reader module is a high performance
+scanner, can read 1D bar code easily and read 2D bar code with
+high speed.It also wins high scan speed for linear code,even for
+bar code on paper or screen.
+MG65 bar code reader module is an advanced bar code
+decoding algorithm which developed on image recognition
+algorithm, can easily and accurately read bar code , simplify
+secondary development.
+MG65 works stable in dark and large temperature range.
+
+1.2 Specification
+
+Default scan mode
+
+Continuous scan
+
+Read code time for once
+
+3s
+
+Reading interval
+
+1S
+
+Parameter：0.1-25.5s; step-size: 0.1s; 0
+means no time limited
+Parameter：0.1-25.5s; step-size: 0.1s; 0
+means no time limited
+
+Output
+
+GBK
+
+GBK、UNICODE、 BIG5
+
+Interface
+
+USB KBW
+
+USB KBW、serial port、USB VCom
+
+Serial Baud Rate
+
+9600
+
+adjustable，details at
+
+Verification
+
+N
+
+Data bit
+
+8
+
+Stop bit
+
+1
+
+CTSRTS
+
+No
+
+Interface
+( TTL-232)
+
+serial mode
+
+1
+
+Read code time
+for once
+
+Operating Voltage
+
+2.1
+
+Parameter：0.1-25.5s; step-size: 0.1s; 0
+
+5s
+
+means no time limited
+
+DC 4.2 - 6.0V
+1
+
+2
+
+Standby Current
+
+30mA
+
+3
+
+Operating Current
+
+160mA
+
+4
+
+Sleep Current
+
+3mA
+
+running characteristic
+1
+
+Light
+
+White light
+
+2
+
+Capture light
+
+Red
+
+3
+
+Scan Angle
+
+4
+
+Resolution
+
+648x 488
+
+5
+
+Scanning angle
+
+35°（Inclination）, 28°（Elevation）
+
+Roll:0-360°, Pitch:±65°, Yaw:±
+60°
+
+1.3 Dimension(mm)
+
+2
+
+Control Panel
+
+Scan Area(testing in office (250 lux) )
+
+3
+
+1.4 Setup Code
+Customer can set module by scan setup code.
+
+Default: setup code on
+
+Off
+
+Output details in setup code
+
+Default: Not output
+
+Output
+
+1.5 Reset
+Back to Factory Setting by scan follow code.
+
+Reset
+
+4
+
+2 Communication interface
+SD-MG1S02 can receive database, control module and set functional parameter by TTL - 232.
+
+2.1 Series Communication Interface
+It’s default and common to connect module and mainframe(such as PC, POS) by series
+communication interface. Make sure communication
+then it will
+
+parameter for module and mainframe are same,
+
+communicate smooth and correct.
+
+Series Output
+TTL-232 is used for series interface which suitable for most system. Required change-over circuit
+for RS-232.
+Default Parameter as form 2- 1. Only Baud Rate can be changed.
+Form 2- 1
+
+Default Parameters
+
+Parameters
+
+Default
+
+Series communication interface
+
+Standard TTL-232
+
+Baud rate
+
+9600
+
+Verification
+
+N
+
+Data bit
+
+8
+
+Stop bit
+
+1
+
+CTSRTS
+
+N
+
+Baud Rate Settlement
+
+1200bps
+
+4800bps
+
+14400bps
+
+9600bps(Default)
+
+19200bps
+5
+
+38400bps
+
+57600bps
+
+115200bps
+
+2.2 USB Interface
+Scan the following code to become standard keyboard input pattern when module connects PC by
+USB.
+
+USB PC Keyboard
+
+2.3 USB Virtual Serial Port
+Scan the following code to become virtual serial port output pattern when module connects PC by
+USB.
+
+USB Virtual serial port
+
+6
+
+3 Read Mode
+3.1 Continuous Mode
+On this mode, reading module read code continuous and auto.
+Break after reading one code , break time is changeable.
+Click the toggle key to pause. Then click to continuous cyclic read code.
+
+Default Continuous Mode
+Time settlement for single read
+The longest time before first successful reading. After this time, module will be into no read time.
+Single Read time: 0.1~25.5 s, step-size: 0.1s;
+0 means infinite time interval.
+5s default
+
+1000ms
+
+default 3000ms
+
+5000ms
+
+infinite time interval
+
+Break time settlement
+Time between two read. Can be settled from 1 to 25.5 s, step-size: 0.1s; default 1.0s
+
+No break
+
+500ms
+
+7
+
+default 1000ms
+
+1500ms
+
+2000ms
+
+3.2 Induction Mode
+After setting, module begin to monitor brightness immediately. When scene change, module will
+begin to read until time of image stabilization over.
+After first successful reading or single reading time out, module will monitor brightness again after
+some time ( changeable)
+Module will cycle working as above when follow happen: module can’t find code between single
+read time, then it will stop reading and jump to monitor brightness.
+On induction mode, module can begin reading code by click, and it will begin to monitor brightness
+when release toggle key or successfully output information.
+
+Induction Mode
+Time settlement for single read
+The longest time before first successful reading. After this time, module will be into no read time.
+Single Read time: 0.1~25.5 s, step-size: 0.1s;
+0 means infinite time interval.
+5s default
+
+1000ms
+
+3000ms
+
+Default 5000ms
+
+infinite time interval
+
+8
+
+Break time settlement
+After one successful output or time out for single read. Module will be into monitor after some time.
+Time from 0 to 25.5 s, step-size: 0.1s; default 1.0s
+
+No Break
+
+500ms
+
+1500ms
+
+Default 1000ms
+
+2000ms
+
+Image stabilization time
+Image stabilization time : the time cost after module find scene change then waiting for the scene
+stable. Time from 0s to 25.5s, step size 0.1s.
+
+Default 0.4s.
+
+100ms
+
+Default 400ms
+
+1000ms
+
+2000ms
+
+3.3 Manual Mode
+Click toggle key begin to read, stop when output or release toggle key
+
+Manual Mode
+Into sleep mode after not work for a while, can be settled by following code.
+
+9
+
+Sleep mode on
+
+Sleep mode off
+
+Default: come into sleep mode after 30s free. Wake up by key. Module will
+
+restart after dropping out
+
+sleep mode.
+
+3.4 Command Triggered Mode
+Module begins to read when receive scan command from mainframe( bit0 of zone bit 0x0002
+writes”1”) , and stop at output or read timeout.
+
+Command triggered mode
+Under command triggered mode, command for serial port trigger is 7E 00 08 01 00 02 01 AB CD;
+After receiving command, model will output “ 02 00 00 01 00 33 31”
+
+and start scan.
+
+Time settlement for single read
+Read and Scan time before output. From 0.1s to 25.5s, step size 0.1s. 0 : infinite time interval;
+Default: 5s
+
+1000ms
+
+3000ms
+
+Default 5000ms
+
+infinite time interval
+
+10
+
+4 Lighting and Collimate
+4.1 Lighting
+Head lamp is used to additional lighting when read.
+Normal(default): Head lamp will be on when read, others off.
+Normally on: always on after boot.
+OFF: head lamp is always off
+
+Normal
+
+Normally on
+
+Off
+
+4.2 Collimation
+There will be a pointing light beam which can help user to find best distance.
+Normal(default): pointing light beam shows when read
+Normally on: pointing light beam shows after power on until power off
+No Collimation: no pointing light beam
+
+Normal(default)
+
+Normally on
+
+11
+
+No Collimation
+
+5 Prompts
+5.1 Prompts Tone
+Sound of buzzer
+
+UP
+
+Down
+
+Silence：Close all prompt tones
+
+Silence on
+
+Silence off
+
+5.2 Decode successfully tone
+
+Default on
+
+close decode successfully tone
+
+Duration time setting. Default: 60ms
+
+30ms
+
+60ms
+
+90ms
+
+120ms
+
+12
+
+5.3 Decoding Prompt
+Output Decoding Prompt: F- read unsuccessfully ; S- successful
+
+Default no decoding prompt output
+
+Output
+
+5.4 Keyboard Settlement
+Scan following code to change keyboard.
+
+Default Keyboard- US
+
+Germany
+
+Japan
+
+Czech
+
+France
+
+Hungary
+
+Italy
+
+Spain
+
+5.5 Image Flip
+When meet flipped or mirror image, like:
+
+13
+
+Scan code into or exit image flip mode
+
+image flip mode
+
+Exit
+
+PS: in the image flip mode can only scan flipped image. For normal, should exit.
+
+5.6 Read Version
+Scan the code to read version information.
+
+Read version
+
+14
+
+6 Data Edition
+Sometimes we need to edit the data before output to make data separation and processing more
+easier.
+Data edition include:
+ Add Prefix
+ Add Suffix
+ Cut data
+ Output CodeID
+ Output “RF” when fail to decode
+ Add End words”Tail”
+Output sequence after data edition:
+【Prefix】【CodeID】【Data】【Suffix】【Tail】
+
+6.1 Prefix
+Add prefix
+Prefix is on the head of encoding Information , and can be self-defined.
+Scan the code to add prefix.
+
+Allow to add prefix
+
+Default no prefix
+
+Change prefix
+Scan “ change prefix” and “setup code” code to change prefix.
+Use base 16 to express each character.
+Max 15 characters.ASCII on appendix C.
+
+change prefix
+E.G. Change prefix to “DATA”
+15
+
+1.
+
+”DTAT” in base 16: “44”, “41”, “54”, “41”
+
+2. Confirm open the “ setup code”, if not, find on 1.4
+3. Scan “change prefix” code
+4. Successively scan “Code ID”: “4”, “4”, “4”, “1”, “5”, “4”, “4”, “1”
+
+6.2 Suffix
+Add Suffix
+Suffix on the end of encoding Information , and can be self-defined.
+
+Allow add suffix
+
+Default no suffix
+
+Change suffix
+Scan “ change suffix” and “setup code” code to change prefix.
+Use base 16 to express each character.
+Max 15 characters.ASCII on appendix C.
+
+Change Suffix
+E.G.: Change suffix to “DATA”
+1. “DTAT” in base 16: “44”, “41”, “54”, “41”
+2.Confirm opening the “setup code”, if not, find on 1.4
+3.Scan “change suffix” code
+4.Successively scan “Code ID”: “4”, “4”, “4”, “1”, “5”, “4”, “4”, “1”
+
+6.3 CODE ID
+Add CODE ID
+Users can identify different types of bar code by CODE ID.
+identify and can be self- defined.
+
+16
+
+CODE ID use one character to
+
+Allow add CODE ID
+
+Default close CODE ID
+
+Default of CODE ID
+Scan “ Default of CODE ID” to back default ID, default ID on appendix B
+
+id of all bar code back to default id
+Change CODE ID
+Users can change CODE ID of any bar code bu scan the setup code (as follow)
+
+and data edition
+
+code.
+Base 16 is used to express each character.
+ASCII on appendix C.
+E.G.: change CODE ID of CODE 128 to “A”
+1. Find “A”=”41” in base 16
+2. Confirm opening the “setup code”, if not, find on 1.4
+3. Scan “ change CODE 128”
+4. Successively scan “Code ID”: “4”, “1”
+
+Change CODE ID
+
+Change CODE ID of EAN13
+
+Change CODE ID of EAN8
+
+Change CODE ID of UPCA
+
+Change CODE ID of UPCE0
+
+17
+
+Change CODE ID of UPCE1
+
+Change CODE ID of CODE 128
+
+Change CODE ID of CODE 39
+
+Change CODE ID of CODE 93
+
+Change CODE ID of CODE BAR
+
+Change CODE ID of Interleaved 2 of 5
+
+Change CODE ID of Industrial 25
+
+Change CODE ID of Matrix 2 of 5
+
+Change CODE ID of CODE 11
+
+Change CODE ID of MSI
+
+Change CODE ID of RSS
+
+Change CODE ID of limited RSS
+
+Change CODE ID of expended RSS
+
+Change CODE ID of QR CODE
+
+18
+
+Change CODE ID of Data Matrix
+
+Change CODE ID of limited PDF417
+
+6.4 Tail
+Open this function to help system quickly distinguish current decoding results.
+Scan “Add tail” to open this function,if read success, there will be tail on the end of decode data.
+
+Close tail
+
+Add tail “CR”
+
+Add tail “TAB”
+
+Add tail “CRLF”
+
+6.5 Cut out Data
+Open to output part of data.
+[Data] is composed of [Start] + [Center] + [End]
+Character length of “start” and “end” can be changed
+
+Output whole data
+
+Output Start part
+
+Output End Part
+
+Output Center part
+
+Change length of [Start]-M
+Scan “ Change M” code and “data edition” code to change length of [Start], max 255 characters
+19
+
+Base 16 is used to express length.ASCII on appendix C.
+
+Change M
+Change length of [End]-N
+Scan “ Change N” code and “data edition” code to change length of [Start], max 255 characters
+Base 16 is used to express length.ASCII on appendix C.
+
+Change N
+
+Output Start part
+E.G. Output “1234567890123” of whole decode information “ 1234567890123ABC”
+1. “13” =”0D” in base 16
+2. Confirm opening the “setup code”, if not, find on 1.4
+3. Scan” change length M”
+4. Successively scan “Code ID”: “0”, “D”
+5. Scan” Output Start part”
+
+Output End Part
+E.G. Output “ABC” of whole decode information “ 1234567890123ABC”
+1. “3” = “03” in base 16
+2. Confirm opening the “setup code”, if not, find on 1.4
+3. Scan ”change length N”
+4. Successively scan “Code ID”:”0”, “3”
+5. Scan” Output Start part”
+
+Output Center part
+E.G.: Output “0123” of whole decode information “ 1234567890123ABC”
+1. “ 10” =”0A”; “3”=”03” in base16
+2. Confirm opening the “setup code”, if not, find on 1.4
+20
+
+3. Scan “change length N”
+4. Successively scan “Code ID”:”0”, “3”
+5. Scan ” change length M”
+6. Successively scan :Code ID”: “0”, “A”
+7. Scan “Output Center part”
+
+6.6 RF Information
+RF(Read Fail): Users can self- define output information when read fail.
+
+Output RF information
+
+Default not output
+
+Change RF information
+Scan”change RF information” and “data edition code” to change RF information.
+Base 16 is used to express, max at 15 character. ASCII on appendix C.
+
+Change RF information
+E.G.: change RF to “FAIL”
+1. Find “FAIL” in base-16: “46”, “41”, “49”, “4C”
+2. Confirm opening the “setup code”, if not, find on 1.4
+3. Scan “ change RF information”
+4. Successively scan”4”, “6”, “4”, “1”, “9”, “4”, “C”
+
+21
+
+7 Bar code type enables/disable configuration
+7.1 All types of bar code can be decoded
+After scan “ Forbid read all bar code” , module will only support to scan setup code.
+
+Support all
+
+Forbid read all bar code
+
+Open default support types
+
+7.2 Bar code rotate
+
+Default allow 360°rotate read
+
+Forbid 360°rotate read
+
+7.3 EAN13
+
+Allow reading EAN13
+
+Forbid reading EAN13
+
+22
+
+7.4 EAN8
+
+Allow reading EAN8
+
+Forbid reading EAN8
+
+7.5 UPCA
+
+Allow reading UPCA
+
+Forbid reading UPCA
+
+7.6 UPCE0
+
+Allow reading UPCE0
+
+Forbid reading UPCE0
+
+7.7 UPCE1
+
+Allow reading UPCE1
+
+Forbid reading UPCE1
+
+7.8 Code128
+
+Allow reading Code128
+
+Forbid reading Code128
+
+Scan following code to change min length of code 128
+23
+
+Code128 min length at 0
+
+Code128min length at 4
+
+Scan following code to change max length of code 128
+
+Code128 max length at 32
+
+Code128 max length at 255
+
+7.9 Code39
+
+Allow reading Code39
+
+Forbid reading Code39
+
+Scan following code to change min length of code39
+
+Code39 min length at 0
+
+*Code39 min length at 4
+
+Scan following code to change max length of code39
+
+Code39 max length at 32
+
+Code39 max length at 255
+
+7.10 Code93
+
+Allow reading Code93
+
+Forbid reading Code93
+
+Scan following code to change min length of code93
+24
+
+Code93 min length at 0
+
+Code93 min length at 4
+
+Scan following code to change max length of code93
+
+Code93max length at 32
+
+Code93max length at 255
+
+7.11 CodeBar
+
+Allow reading CodeBar
+
+Forbid reading CodeBar
+
+Scan following code to allow/forbid to send Start-stop operator
+
+Send CodeBar Start-stop operator
+
+Not send CodeBar Start-stop operator
+
+Scan following code to change min length of CodeBar
+
+CodeBar min length at 0
+
+CodeBarmin length at 4
+
+Scan following code to change min length of CodeBar
+
+CodeBar max length at 32
+
+CodeBar max length at 255
+
+25
+
+7.12 QR
+
+Allow reading QR
+
+Forbid reading QR
+
+7.13 Interleaved 2 of 5
+
+Allow reading Interleaved 2 of 5
+
+Default Forbid reading Interleaved 2 of 5
+
+Scan following code to set min length of Interleaved 2 of 5
+
+Interleaved 2 of 5 min length at 0
+
+Default
+
+Interleaved 2 of 5 min length at 4
+
+Scan following code to set max length of Interleaved 2 of 5
+
+Interleaved 2 of 5 max length at 32
+
+Interleaved 2 of 5max length at 255
+
+7.14 Industrial 25
+
+Allow reading Industrial 25
+
+Forbid reading Industrial 25
+
+Scan following code to set min length of Interleaved 25
+
+26
+
+Industrial 25 min length at 0
+
+Industrial 25 min length at 4
+
+Scan following code to set max length of Interleaved 25
+
+Industrial 25 max length at 32
+
+Industrial 25 max length at 255
+
+7.15 Matrix 2 of 5
+
+Allow reading Matrix 2 of 5
+
+Forbid reading Matrix 2 of 5
+
+Scan following code to set min length of Matrix 2 of 5
+
+Matrix 2 of 5 min length at 0
+
+Matrix 2 of 5 min length at 4
+
+Scan following code to set max length of Matrix 2 of 5
+
+Matrix 2 of 5 max length at 32
+
+Matrix 2 of 5max length at 255
+
+7.16 Code11
+
+Allow reading Code11
+
+Forbid reading Code11
+
+Scan following code to set min length of Code11
+27
+
+Code11 min length at 0
+
+Code11 min length at 4
+
+Scan following code to set max length of Code11
+
+Code11 max length at 32
+
+Code11 max length at 255
+
+7.17 MSI
+
+Allow reading MSI
+
+Forbid reading MSI
+
+Scan following code to set min length of MSI
+
+MSI min length at 0
+
+*MSI min length at 4
+
+Scan following code to set max length of MSI
+
+MSI max length at 32
+
+MSI max length at 255
+
+7.18 RSS
+
+Allow reading RSS-14
+
+Forbid reading RSS-14
+
+28
+
+Allow reading limited RSS
+
+Forbid reading limited RSS
+
+Allow reading expended RSS
+
+Forbid reading expended RSS
+
+Scan following code to set min length of RSS
+
+RSS min length at 0
+
+RSS min length at 4
+
+Scan following code to set max length of RSS
+
+*RSS max length at 32
+
+RSS max length at 255
+
+7.19 DM
+
+Allow reading DM
+
+Forbid reading DM
+
+7.20 PDF417
+
+Allow reading PDF417
+
+Forbid reading PDF417
+
+29
+
+8 Serial Port Instruction
+Users can settle the module by sending instruction from mainframe.
+Please make sure communicate parameter complete matching between module and mainframe.
+Module default serial communicate parameter: Baud rate 9600bps; No check; 8 bit data; 1 bit stop
+bit; No flow control.
+
+8.1CRC Algorithm
+CRC: CRC_CCITT check value (2 bytes).
+Suitable for Types、Lens、Address、Datas;
+Characteristic polynomial : X16+X12+X5+1, multinomial coefficient: 0x1021, original value:0 ;
+For single byte, the highest bit will be calculated at first, output will be without negation.
+Reference code of C:
+unsigned int crc_cal_by_bit(unsigned char* ptr, unsigned int len)
+{
+unsigned int crc = 0;
+while(len-- != 0)
+{
+for(unsigned char i = 0x80; i != 0; i /= 2)
+{
+crc *= 2;
+if((crc&0x10000) !=0)
+crc ^= 0x11021;
+if((*ptr&i) != 0)
+crc ^= 0x1021;
+}
+ptr++;
+}
+return crc;
+}
+
+30
+
+8.2 Read Zone Bit
+Max 256 bytes/time for zone bit reading.
+Send Command Format:
+Numbers of bytes
+
+2bytes
+
+1byte
+
+1byte
+
+2bytes
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Address
+
+Datas
+
+CRC
+
+Details
+
+0x7E00
+
+07H
+
+01H
+
+xxH
+
+xxH
+
+xxH
+
+PS:
+
+Address : 0x0000~0x00FF（2 bytes）, address to start reading zone bit
+Datas
+
+: 0x00~0xFF（1 byte）, Numbers of zone bit for Sequential read, 0x00= 256byets
+
+Receive Command Format:
+Numbers of
+
+2bytes
+
+1byte
+
+1byte
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Datas
+
+CRC
+
+Details
+
+0x0200
+
+00H
+
+xxH
+
+xxH
+
+xxH
+
+bytes
+
+PS: Types: 0x00= read succeed
+Lens : numbers of upload bytes; 0x00= 256bytes
+Datas
+
+: 0x00~0xFF means read data.
+
+If CRC wrong, no return data
+If format or data wrong, no return data
+E.G.:
+Read address 0x000A of Zone bit
+1) Read successfully and return data is 0x3E.
+Input: 0x7E 0x00 0x07 0x01 0x00 0x0A 0x01 0xEE 0x8A
+Output: 0x02 0x00 0x00 0x01 0x3E 0xE4 0xAC
+2）CRC wrong
+Input：0x7E 0x00 0x07 0x01 0x00 0x0A 0x01 0x11 0x22
+Output ：None
+3) When length of command to short or more than 400ms after 0x7e 0x00, treat as unknown
+command.
+Input: 0x7E 0x00 0x07 0x01 0x00 0x0A 0x01
+Output: None
+
+31
+
+8.3 Write Zone Bit
+Max 245 bytes for one time write
+Send Command Format:
+Numbers of
+
+2bytes
+
+1byte
+
+1byte
+
+2bytes
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Address
+
+Datas
+
+CRC
+
+Detail
+
+0x7E00
+
+08H
+
+01H
+
+xxH
+
+bytes
+
+xxH
+
+xxH
+
+PS: Lens: 0x00~0xFF（1 byte）, means numbers of bytes of this datas, times of continuous writing.
+0x00 means 256bytes
+Address : 0x0000~0xFFFF（2 bytes）Start location of write
+Datas
+
+：0x00~0xFF（1~256 bytes）, dates wrote in zone bit
+
+Receive Command Format:
+
+Numbers of
+
+2bytes
+
+1byte
+
+1byte
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Datas
+
+CRC
+
+Detail
+
+0x0200
+
+00H
+
+01H
+
+00H
+
+bytes
+
+0x3331
+
+PS: Types：0x00 write succeed
+If CRC wrong, no return data
+If format or data wrong, no return data
+E.G.:
+Write 0x3E in 0x000A of zone bit
+1) successfully set
+Input ：0x7E 0x00 0x08 0x01 0x00 0x0A 0x3E 0x4C 0xCF
+Output：0x02 0x00 0x00 0x01 0x00 0x33 0x31
+2) CRC wrong
+Input：0x7E 0x00 0x08 0x01 0x00 0x0A 0x3E 0x11 0x22
+Output：None
+3) When length of command to short or more than 400ms after 0x7e 0x00, treat as unknown
+command.
+Input: 0x7E 0x00 0x08 0x01 0x00 0x0A 0x3E
+Output: None
+32
+
+8.4 Save zone bit to EEPROM Command
+Send Command Format:
+Numbers of
+
+2bytes
+
+1byte
+
+1byte
+
+2bytes
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Address
+
+Datas
+
+CRC
+
+Detail
+
+0x7E00
+
+09H
+
+01H
+
+0x0000
+
+00H
+
+0xDEC8
+
+bytes
+
+Datas Receive Format:
+Numbers of
+
+2bytes
+
+1byte
+
+1byte
+
+1byte
+
+2bytes
+
+Name
+
+Head
+
+Types
+
+Lens
+
+Datas
+
+CRC
+
+Detail
+
+0x0200
+
+00H
+
+01H
+
+00H
+
+0x3331
+
+bytes
+
+PS: Types
+
+: 0x00 = succeed
+
+If CRC wrong, no return data
+If format or data wrong, no return data
+
+8.5 List of zone bit
+Zone bit
+
+0x0000
+
+Data bit
+
+Function
+
+Bit 7
+
+1：Open
+
+Bit 6
+
+1：Mute off
+
+0：Mute on
+
+Bit 5-4
+
+00：No aim
+
+01：Standard
+
+10/11：always on
+
+Bit 3-2
+
+00：No light
+
+01：Standard
+
+10/11：Always on
+
+Bit 1-0
+
+00：Manual mode
+11：Sensor mode
+
+Zone bit
+
+0x0002
+
+Data bit
+
+Function
+
+LED when successfully read
+
+0：Close
+
+01：Command mode
+
+33
+
+10：Continuous mode
+
+Bit 7
+
+Keep
+
+Bit 6
+
+1：Output successfully decode prompt
+
+Bit5-1
+
+Keep
+
+Bit0
+
+Keep
+
+Zone bit
+
+0x0003
+
+Data bit
+
+Function
+
+Bit 7-2
+
+Keep
+
+Bit 1
+
+1：Close Settlement Code
+
+Bit0
+
+1：Output content of settlement code
+
+Zone bit
+
+0x0004
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Time for image stabilization
+0x00-0xFF：0.0-25.5s
+
+Zone bit
+
+0x0005
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Read interval
+0x00-0xFF：0.0-25.5s
+
+Zone bit
+
+0x0006
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Time for single read
+0x00-0xFF：0.0-25.5s
+
+Zone bit
+
+0x0007
+
+Data bit
+
+Function
+
+Bit 7
+Bit6-0
+Zone bit
+
+Auto sleep
+1：On
+
+0：Not output
+
+0：Open
+
+0：Off
+
+Free time（high order Bit14-8）
+Unit：100ms
+0x0008
+34
+
+0：Not output
+
+Data bit
+Bit 7-0
+
+Function
+Free time（low order Bit7-0）
+Unit: 100ms
+
+Zone bit
+
+0x000A
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Successfully read suond
+0x00：Piezo Buzzer 0x01-0xFF：sfn, Value*20；
+
+Zone bit
+
+0x000B
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Time duration for successfully read sound
+0x00-0xFF；0-255ms
+
+Zone bit
+
+0x000C
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Piezo Buzzer
+0：high level when free, low level when busy
+
+1：low level when free,
+
+high level when busy
+Zone bit
+
+0x000D
+
+Data bit
+
+Function
+
+Bit 7-4
+
+Keep
+
+Bit 3-2
+
+Data encoding format
+00：GBK
+01：UNICODE
+
+Bit1-0
+
+00：serial port output
+01：USB PC Keyboard
+11：USB virtual serial port
+
+Zone bit
+
+0x000E
+
+Data bit
+
+Function
+
+Bit 7-3
+
+keep
+
+Bit2
+Bit1-0
+
+1：Decode successfully sound on
+Keep
+35
+
+10：BIG5
+
+11：Keep
+10：Keep
+
+0：Decode successfully sound off
+
+Zone bit
+
+0x002B，0x2A
+
+Data bit
+
+Function
+
+Bit 15-13
+
+Keep
+
+Bit 12-0
+
+0x09C4：Series rate: 1200 bps
+0x0271：Series rate: 4800 bps
+0x0139：Series rate: 9600 bps
+0x00D0：Series rate: 14400 bps
+0x009C：Series rate: 19200 bps
+0x004E：Series rate: 38400 bps
+0x0034：Series rate: 57600 bps
+0x001A：Series rate: 115200bps
+
+Zone bit
+
+0x002C
+
+Data bit
+
+Function
+
+Bit 7-3
+
+Keep
+
+Bit 2-1
+
+Bar code switch
+00：forbid reading all bar code 01：all bar code can be read;
+10/11：Default
+
+Bit 0
+
+360°rotate read
+0：Close；
+
+Zone bit
+
+0x002E
+
+Data bit
+
+Function
+
+Bit 7-1
+
+保留
+
+Bit0
+
+Read EAN13
+0：Forbid
+
+Zone bit
+
+0x002F
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read EAN8
+0：Forbid
+
+Zone bit
+
+0x0030
+
+Data bit
+
+Function
+
+1：Open
+
+1：Allow
+
+1: Allow
+
+36
+
+Bit 7-1
+Bit0
+
+Keep
+Read UPCA
+0：Forbid
+
+Zone bit
+
+0x0031
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read UPCE0
+0：Forbid
+
+Zone bit
+
+0x0032
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read UPCE1
+0：Forbid
+
+Zone bit
+
+0x0033
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read Code128
+0：Forbid
+
+1：Allow
+
+1：Allow
+
+1：Allow
+
+1：Allow
+
+Zone bit
+
+0x0034
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Code128
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0035
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Code128
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0036
+
+Data bit
+
+Function
+
+37
+
+Bit 7-1
+Bit0
+
+Keep
+Read Code39
+0：Forbid
+
+1：Allow
+
+Zone bit
+
+0x0037
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Code39
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0038
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Code39
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0039
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read Code93
+0：Forbid
+
+1：Allow
+
+Zone bit
+
+0x003A
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Code93
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x003B
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Code93
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x003C
+
+Data bit
+
+Function
+
+Bit 7-2
+
+Keep
+
+Bit1
+
+Send CodeBar Start-stop operator
+0：Forbid 1：Allow
+
+38
+
+Bit0
+
+Read CodeBar
+0：Forbid
+
+1：Allow
+
+Zone bit
+
+0x003D
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of CodeBar
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x003E
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of CodeBar
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x003F
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read QR
+0：forbid
+
+Zone bit
+
+0x0040
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+1：allow
+
+Read Interleaved 2 of 5
+0：Forbid
+1：Allow
+
+Zone bit
+
+0x0041
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Interleaved 2 of 5
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0042
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Interleaved 2 of 5
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0043
+
+Data bit
+
+Function
+39
+
+Bit 7-1
+Bit0
+
+Keep
+Read Industrial 25
+0：forbid
+1：Allow
+
+Zone bit
+
+0x0044
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Industrial 25
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0045
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Industrial 25
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0046
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read Matrix 2 of 5
+0：forbid
+1：Allow
+
+Zone bit
+
+0x0047
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Matrix 2 of 5
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0048
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Matrix 2 of 5
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0049
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+Zone bit
+
+Read Code11
+0：Forbid
+
+1：Allow
+
+0x004A
+40
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of Code11
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x004B
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of Code11
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x004C
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read MSI
+0：Forbid
+
+1：Allow
+
+Zone bit
+
+0x004D
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of MSI
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x004E
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of MSI
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x004F
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read RSS-14
+0：Forbid
+
+Zone bit
+
+0x0050
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+1：Allow
+
+41
+
+Bit0
+
+Read limited RSS
+0：Forbid
+1：Allow
+
+Zone bit
+
+0x0051
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read Expended RSS
+0：Forbid
+1：Allow
+
+Zone bit
+
+0x0052
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Min length of RSS
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0053
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Max length of RSS
+0x00-0xFF：0-255Byte
+
+Zone bit
+
+0x0054
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read DM
+0：Forbid
+
+Zone bit
+
+0x0055
+
+Data bit
+
+Function
+
+Bit 7-1
+
+Keep
+
+Bit0
+
+Read PDF417
+0：Forbid
+
+Zone bit
+
+0x0060
+
+Data bit
+
+Function
+
+Bit 7
+
+1：Allow
+
+1：Allow
+
+Keep
+
+42
+
+Bit6-5
+
+Type of Tailed
+00：CR(0x0D)
+10：TAB(0x09)
+
+01：CRLF(0x0D,0x0A)
+11：None
+
+Bit4
+
+1.Allow add RF
+
+0：Foebid
+
+Bit3
+
+1：Allow add prefix
+
+0：Forbid
+
+Bit2
+
+1：Allow add Code ID
+
+0：Forbid
+
+Bit1
+
+1：Allow add suffix
+
+0：Forbid
+
+Bit0
+
+1：Allow add tail
+
+0：Forbid
+
+Zone bit
+
+0x0061
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Keyboard Settlement
+00：US
+01：Czech
+02：France
+03：Germany
+04：Hungary
+05：Italy 06：Japan
+07：Spain
+
+Zone bit
+
+0x0062
+
+Data bit
+
+Function
+
+Bit 7-4
+
+Length of prefix
+0x00-0x0F
+
+Bit3-0
+
+Length of suffix
+0x00-0x0F
+
+Zone bit
+
+0x0063 – 0x0071
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Prefix
+0x00-0xFF：Content，max 15Byte
+
+Zone bit
+
+0x0072 - 0x0080
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Suffix
+0x00-0xFF：Content，max 15Byte
+
+Zone bit
+
+0x0081
+
+Data bit
+
+Function
+
+43
+
+Bit 7-4
+
+Keep
+
+Bit3-0
+
+RF length
+0x00-0x0F
+
+Zone bit
+
+0x0082– 0x0081
+
+Data bit
+
+Function
+
+Bit 7-0
+
+RF content
+0x00-0xFF：max 15Byte
+
+Zone bit
+
+0x0091 – 0x00A4
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Code ID settlement
+0x41-0x5a & 0x61-0x7a （A-Z,a-z）Code ID as appendix B
+
+Zone bit
+
+0x00B0
+
+Data bit
+
+Function
+
+Bit 7-2
+
+Keep
+
+Bit 1-0
+
+Data Cut out settlement
+00：Output whole data
+10：Output End part
+
+Zone bit
+
+0x00B1
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Cut out M bytes from start
+0x00-0xFF：0-255 bytes
+
+01：Output Start part
+11：Output center part
+
+Zone bit
+
+0x00B2
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Cut out N bytes from end
+0x00-0xFF：0-255个字符
+
+Zone bit
+
+0x00D9（只写Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Function Zone bit
+0x55：reset to defaults
+0xA0：Mild sleep, wake up by UART interrupt; Power consumption:28mA
+0xA5 ： Deep sleep,wake up by UART interrupt; module reboot; Power
+consumption:3mA
+44
+
+0x00：write 0 to wake up module
+Zone bit
+
+0x00E0 （Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Product model
+0x05：SD-MG1S02 Module
+
+Zone bit
+
+0x00E1（Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Hardware Version
+0x64：V1.00
+0x6E：V1.10
+0x78：V1.20
+0x82：V1.30
+0x8C：V1.40
+......
+
+Zone bit
+
+0x00E2 （Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Software Version
+0x64：V1.00
+0x6E：V1.10
+0x78：V1.20
+0x82：V1.30
+0x8C：V1.40
+......
+
+Zone bit
+
+0x00E3 （Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Year of software (Add 2000)
+0x0F：2015
+0x10：2016
+0x11：2017
+......
+
+Zone bit
+
+0x00E4（Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Software month
+0x09：September
+0x0A：Oct.
+45
+
+0x0B：Nov.
+......
+Zone bit
+
+0x00E5（Only read Zone bit）
+
+Data bit
+
+Function
+
+Bit 7-0
+
+Software date
+0x09：9
+0x0A：10
+0x0B：11
+......
+
+46
+
+9 Appendix A：Common serial port instruction
+Function
+
+Instruction
+
+Baud rate to 9600
+
+7E 00 08 01 00 D9 D3 20 38
+
+Save settlements to EEPROM
+
+7E 00 09 01 00 00 DE C8
+
+Find baud rate
+
+7E 00 07 01 00 2A 02 D8 0F
+
+Module will return following info after mainframe send serial port instruction - find baud rate
+Return information
+
+Baud rate
+
+02 00 00 02 C4 09 SS SS
+
+1200
+
+02 00 00 02 71 02 SS SS
+
+4800
+
+02 00 00 02 39 01 SS SS
+
+9600
+
+02 00 00 02 D0 00 SS SS
+
+14400
+
+02 00 00 02 9C 00 SS SS
+
+19200
+
+02 00 00 02 4E 00 SS SS
+
+38400
+
+02 00 00 02 34 00 SS SS
+
+57600
+
+PS：SS SS= check value。
+
+47
+
+10 Appendix B：Code ID List
+Corresponding
+character
+
+Zone bit address
+
+EAN-13
+
+d
+
+0x91
+
+EAN-8
+
+d
+
+0x92
+
+UPC-A
+
+c
+
+0x93
+
+UPC-E0
+
+c
+
+0x94
+
+UPC-E1
+
+c
+
+0x95
+
+Code 128
+
+j
+
+0x96
+
+Code 39
+
+b
+
+0x97
+
+Code 93
+
+i
+
+0x98
+
+Codabar
+
+a
+
+0x99
+
+Interleaved 2 of 5
+
+e
+
+0x9A
+
+Industrial 2 of 5
+
+D
+
+0x9B
+
+Matrix 2 of 5
+
+v
+
+0x9C
+
+Code 11
+
+H
+
+0x9D
+
+MSI-Plessey
+
+m
+
+0x9E
+
+GS1 Databar(RSS-14)
+
+R
+
+0x9F
+
+GS1 Databar Limited(RSS)
+
+R
+
+0xA0
+
+GS1 Databar Expanded(RSS)
+
+R
+
+0xA1
+
+QR Code
+
+Q
+
+0xA2
+
+Data Matrix
+
+u
+
+0xA3
+
+PDF 417
+
+r
+
+0xA4
+
+Type of Bar Code
+
+48
+
+11 Appendix C：ASCII
+Base 16
+
+Decimalism
+
+Character
+
+00
+
+0
+
+NUL
+
+01
+
+1
+
+SOH
+
+02
+
+2
+
+STX
+
+03
+
+3
+
+ETX
+
+04
+
+4
+
+EOT
+
+05
+
+5
+
+ENQ
+
+06
+
+6
+
+ACK
+
+07
+
+7
+
+BEL
+
+08
+
+8
+
+BS
+
+09
+
+9
+
+HT
+
+0a
+
+10
+
+LF
+
+0b
+
+11
+
+VT
+
+0c
+
+12
+
+FF
+
+0d
+
+13
+
+CR
+
+0e
+
+14
+
+SO
+
+0f
+
+15
+
+SI
+
+10
+
+16
+
+DLE
+
+11
+
+17
+
+DC1
+
+12
+
+18
+
+DC2
+
+13
+
+19
+
+DC3
+
+14
+
+20
+
+DC4
+
+15
+
+21
+
+NAK
+
+16
+
+22
+
+SYN
+
+17
+
+23
+
+ETB
+
+18
+
+24
+
+CAN
+
+19
+
+25
+
+EM
+
+1a
+
+26
+
+SUB
+
+1b
+
+27
+
+ESC
+49
+
+Base 16
+
+Decimalism
+
+Character
+
+1c
+
+28
+
+FS
+
+1d
+
+29
+
+GS
+
+1e
+
+30
+
+RS
+
+1f
+
+31
+
+US
+
+20
+
+32
+
+SP
+
+21
+
+33
+
+!
+
+22
+
+34
+
+"
+
+23
+
+35
+
+#
+
+24
+
+36
+
+$
+
+25
+
+37
+
+%
+
+26
+
+38
+
+&
+
+27
+
+39
+
+`
+
+28
+
+40
+
+(
+
+29
+
+41
+
+)
+
+2a
+
+42
+
+*
+
+2b
+
+43
+
++
+
+2c
+
+44
+
+,
+
+2d
+
+45
+
+-
+
+2e
+
+46
+
+.
+
+2f
+
+47
+
+/
+
+30
+
+48
+
+0
+
+31
+
+49
+
+1
+
+32
+
+50
+
+2
+
+33
+
+51
+
+3
+
+34
+
+52
+
+4
+
+35
+
+53
+
+5
+
+36
+
+54
+
+6
+
+37
+
+55
+
+7
+
+38
+
+56
+
+8
+
+39
+
+57
+
+9
+
+3a
+
+58
+
+:
+50
+
+Base 16
+
+Decimalism
+
+Character
+
+3b
+
+59
+
+;
+
+3c
+
+60
+
+<
+
+3d
+
+61
+
+=
+
+3e
+
+62
+
+>
+
+3f
+
+63
+
+?
+
+40
+
+64
+
+@
+
+41
+
+65
+
+A
+
+42
+
+66
+
+B
+
+43
+
+67
+
+C
+
+44
+
+68
+
+D
+
+45
+
+69
+
+E
+
+46
+
+70
+
+F
+
+47
+
+71
+
+G
+
+48
+
+72
+
+H
+
+49
+
+73
+
+I
+
+4a
+
+74
+
+J
+
+4b
+
+75
+
+K
+
+4c
+
+76
+
+L
+
+4d
+
+77
+
+M
+
+4e
+
+78
+
+N
+
+4f
+
+79
+
+O
+
+50
+
+80
+
+P
+
+51
+
+81
+
+Q
+
+52
+
+82
+
+R
+
+53
+
+83
+
+S
+
+54
+
+84
+
+T
+
+55
+
+85
+
+U
+
+56
+
+86
+
+V
+
+57
+
+87
+
+W
+
+58
+
+88
+
+X
+
+59
+
+89
+
+Y
+51
+
+Base 16
+
+Decimalism
+
+Character
+
+5a
+
+90
+
+Z
+
+5b
+
+91
+
+[
+
+5c
+
+92
+
+\
+
+5d
+
+93
+
+]
+
+5e
+
+94
+
+^
+
+5f
+
+95
+
+_
+
+60
+
+96
+
+'
+
+61
+
+97
+
+a
+
+62
+
+98
+
+b
+
+63
+
+99
+
+c
+
+64
+
+100
+
+d
+
+65
+
+101
+
+e
+
+66
+
+102
+
+f
+
+67
+
+103
+
+g
+
+68
+
+104
+
+h
+
+69
+
+105
+
+i
+
+6a
+
+106
+
+j
+
+6b
+
+107
+
+k
+
+6c
+
+108
+
+l
+
+6d
+
+109
+
+m
+
+6e
+
+110
+
+n
+
+6f
+
+111
+
+o
+
+70
+
+112
+
+p
+
+71
+
+113
+
+q
+
+72
+
+114
+
+r
+
+73
+
+115
+
+s
+
+74
+
+116
+
+t
+
+75
+
+117
+
+u
+
+76
+
+118
+
+v
+
+77
+
+119
+
+w
+
+78
+
+120
+
+x
+52
+
+Base 16
+
+Decimalism
+
+Character
+
+79
+
+121
+
+y
+
+7a
+
+122
+
+z
+
+7b
+
+123
+
+{
+
+7c
+
+124
+
+|
+
+7d
+
+125
+
+}
+
+7e
+
+126
+
+~
+
+7f
+
+127
+
+DEL
+
+53
+
+12 Appendix D：data code
+0~9
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+A
+
+B
+
+A–F
+
+54
+
+C
+
+D
+
+E
+
+F
+
+55
+
+13 Appendix E：Save or Cancel
+Scan cancel code to cancel wrong read date.
+
+Save
+
+Cancel last byte
+
+Cancel all read bytes
+
+Cancel changes
+
+56
+
+

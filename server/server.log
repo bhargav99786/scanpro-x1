@@ -1,0 +1,229 @@
+[HTTP/WS] Server and Dashboard running on http://localhost:3030
+[HTTPS/WSS] Secure Dashboard running on https://0.0.0.0:3031
+[MQTT] Connected to local broker on port 1883
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+[MQTT] Subscribed to device/+/scan
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3989 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+[MQTT] Subscribed to device/+/status
+[MQTT] Subscribed to device/+/task_complete
+[WS] Audio client connected: type=pc, deviceId=unassigned, target=all
+[MQTT] Publishing 0 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+[WS] Audio client connected: type=pc, deviceId=unassigned, target=all
+[WS] Audio client connected: type=pc, deviceId=unassigned, target=all
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 729276 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3996 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6766 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+Received status update: device/scanpro-test-01/status {
+  status: 'offline',
+  user: 'No Login',
+  version: 'v2.0.0-OTA',
+  ts: 169516
+}
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 175486 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+Received scan: {
+  device_id: 'scanpro-test-01',
+  sku: '31313131313131313131313131313131313131313131313131SKU-90000006',
+  ts: 206546
+}
+Received scan: {
+  device_id: 'scanpro-test-01',
+  sku: '31313131313131313131313131313131313131313131313131SKU-90000006',
+  ts: 239526
+}
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 262586 }
+Received scan: {
+  device_id: 'scanpro-test-01',
+  sku: '31313131313131313131313131313131313131313131313131SKU-90000006',
+  ts: 376256
+}
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4021 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6581 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 26691 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 29991 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 34761 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 42041 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000004', ts: 56821 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000004', ts: 60581 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 86251 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-90000006', ts: 89551 }
+Received scan: { device_id: 'scanpro-test-01', sku: 'SKU-900000055', ts: 241001 }
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4000 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3976 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 7066 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3926 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 14476 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 782096 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 917416 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4213 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 5523 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4253 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 7033 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4042 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 14982 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4002 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 7092 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+Received task completion: { task_id: '1788428584026', device_id: 'scanpro-test-01' }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4093 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 13393 }
+[MQTT] Publishing 1 tasks to device/scanpro-test-01/tasks (user: '1')
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+Received task completion: { task_id: '1788434998467', device_id: 'scanpro-test-01' }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4001 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6161 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3982 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 14542 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 3992 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 5492 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4032 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 8072 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4070 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6420 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4003 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6663 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4021 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 10461 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+Received status update: device/scanpro-test-01/status {
+  status: 'offline',
+  user: 'No Login',
+  version: 'v2.0.0-OTA',
+  ts: 77801
+}
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 351131 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4050 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 14850 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4041 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 8121 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+Received status update: device/scanpro-test-01/status {
+  status: 'offline',
+  user: 'No Login',
+  version: 'v2.0.0-OTA',
+  ts: 141581
+}
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 146251 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+Received status update: device/scanpro-test-01/status {
+  status: 'offline',
+  user: 'No Login',
+  version: 'v2.0.0-OTA',
+  ts: 150731
+}
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 166171 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4032 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 5212 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4012 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 9152 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4003 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 10363 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4013 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6333 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4014 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 8784 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+Received status update: device/scanpro-test-01/status {
+  status: 'offline',
+  user: 'No Login',
+  version: 'v2.0.0-OTA',
+  ts: 17784
+}
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 23684 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4042 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 6332 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')
+[WS] Audio client connected: type=esp32, deviceId=scanpro-test-01, target=all
+Received status update: device/scanpro-test-01/status { status: 'online', user: 'No Login', version: 'v2.0.0-OTA', ts: 4014 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: 'No Login')
+Received status update: device/scanpro-test-01/status { status: 'online', user: '1', version: 'v2.0.0-OTA', ts: 8974 }
+[MQTT] Publishing 2 tasks to device/scanpro-test-01/tasks (user: '1')

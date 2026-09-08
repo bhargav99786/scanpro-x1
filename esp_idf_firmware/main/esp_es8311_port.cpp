@@ -146,7 +146,8 @@ void audio_play_beep(uint16_t freq_hz, uint16_t duration_ms)
     const uint32_t fade = AUDIO_SAMPLE_RATE / 100; // 10ms fade in/out
     float omega = 2.0f * M_PI * freq_hz / (float)AUDIO_SAMPLE_RATE;
     for (size_t i = 0; i < samples; i++) {
-        int16_t s = (int16_t)(sinf(omega * i) * 20000.0f); // 20000 amplitude
+        // Square wave for maximum piercing loudness
+        int16_t s = (sinf(omega * i) > 0.0f) ? 32700 : -32700;
         if      (i < fade)                   s = (int16_t)((float)s * i / fade);
         else if (i > samples - fade)         s = (int16_t)((float)s * (samples - i) / fade);
         buf[i] = s;
@@ -163,9 +164,9 @@ void beepSuccess()
 
 void beepError()
 {
-    audio_play_beep(400, 100);
-    vTaskDelay(pdMS_TO_TICKS(50));
-    audio_play_beep(300, 150);
+    audio_play_beep(400, 60);
+    vTaskDelay(pdMS_TO_TICKS(20));
+    audio_play_beep(300, 80);
 }
 
 void beepStartup()

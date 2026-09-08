@@ -15,8 +15,26 @@
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
+#include <esp_mac.h>
 
-#define BLE_DEVICE_NAME    "ScanPro-X1"
+inline char s_ble_device_name[32] = "ScanPro-X1";
+
+inline const char* bleGetDeviceName() {
+    static bool init = false;
+    if (!init) {
+        uint8_t mac[6] = {0};
+        if (esp_read_mac(mac, ESP_MAC_BT) == ESP_OK) {
+            snprintf(s_ble_device_name, sizeof(s_ble_device_name), "ScanPro-X1-%02X%02X", mac[4], mac[5]);
+        } else if (esp_read_mac(mac, ESP_MAC_WIFI_STA) == ESP_OK) {
+            snprintf(s_ble_device_name, sizeof(s_ble_device_name), "ScanPro-X1-%02X%02X", mac[4], mac[5]);
+        } else {
+            snprintf(s_ble_device_name, sizeof(s_ble_device_name), "ScanPro-X1");
+        }
+        init = true;
+    }
+    return s_ble_device_name;
+}
+
 #define BLE_SERVICE_UUID   "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define BLE_SCAN_CHAR_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
@@ -34,7 +52,7 @@ class _BleCb : public BLEServerCallbacks {
 };
 
 inline void bleInit() {
-    BLEDevice::init(BLE_DEVICE_NAME);
+    BLEDevice::init(bleGetDeviceName());
     _bleServer = BLEDevice::createServer();
     _bleServer->setCallbacks(new _BleCb());
 
@@ -44,7 +62,7 @@ inline void bleInit() {
         BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
     _bleScanChar->addDescriptor(new BLE2902());
     svc->start();
-    Serial.println("[BLE] Initialized as '" BLE_DEVICE_NAME "' (not advertising yet)");
+    Serial.printf("[BLE] Initialized as '%s' (not advertising yet)\n", bleGetDeviceName());
 }
 
 inline void bleStartAdvertising() {

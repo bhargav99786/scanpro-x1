@@ -1,0 +1,13 @@
+Assignee,Task Name,Priority,SKU,Quantity,Item Name
+1,Urgent Electronics Order,High,SKU-90000001,2,
+1,Urgent Electronics Order,High,SKU-90000002,1,
+1,Urgent Electronics Order,High,SKU-90000003,2,
+2,Restock Aisle B,Medium,SKU-90000004,5,
+2,Restock Aisle B,Medium,SKU-90000005,10,
+1,Cable Audit,Low,SKU-90000006,50,
+USR-003,Monitor Setup,High,SKU-90000004,2,
+USR-003,Monitor Setup,High,SKU-90000006,2,
+4,VIP Delivery Batch,High,SKU-90000001,1,
+4,VIP Delivery Batch,High,SKU-90000002,3,
+4,VIP Delivery Batch,High,SKU-90000005,1,
+

@@ -1,0 +1,83 @@
+Test ID,Category,Subsystem / Feature,Test Scenario Objective,Priority,Preconditions,Execution Steps,Expected Result,Actual Result,Status
+TC-GEN-01,Power Management,AXP2101 PMIC,Cold Boot and Splash Screen Sequence,P1,Device powered off with battery charged > 20%.,"1. Press power button.
+2. Observe LCD backlight, splash logo, status bar, and initial transition to Login screen.","Device boots within 3 seconds, displays splash screen, initializes all I2C/SPI buses without panic, and navigates to Login screen.",Pass - boots cleanly into Login UI,PASSED
+TC-GEN-02,Power Management,Battery Monitor,Real-Time Battery % and Voltage Reading,P2,Device running on battery.,"1. Check top-right status bar battery indicator.
+2. Verify battery percentage and icon match actual cell voltage via AXP2101.
+3. Connect USB-C charger and observe icon.","Battery percentage displays accurate level (0-100%). When USB charger is plugged in, charging status is detected and voltage increases.",Pass - battery % matches PMIC telemetry,PASSED
+TC-GEN-03,Power Management,Power Off,Software Shutdown via Settings Menu,P2,"User logged in, on Settings screen.","1. Navigate to Settings.
+2. Tap 'Power Off Device' button.
+3. Confirm shutdown modal.","Device logs shutdown event, flushes NVS, commands AXP2101 PMIC to cut power rails, and device turns off completely.",Pass - PMIC executes hardware shutdown,PASSED
+TC-GEN-04,Display & Touch,Touch Screen,Capacitive Touch Accuracy & Responsiveness,P1,Device on Home or Tasks screen.,"1. Tap interactive elements across all 4 quadrants of display.
+2. Test drag/scroll on task and inventory lists.
+3. Tap on-screen keypad buttons.",FT6336 controller reports touch coordinates accurately with zero lag or phantom touches. Lists scroll smoothly without stutter.,Pass - 60fps smooth touch response,PASSED
+TC-GEN-05,Display & Touch,Screen Rotation,"Display Orientation Changes (0°, 90°, 180°, 270°)",P2,User in Settings screen.,"1. Navigate to Settings -> Screen Rotation.
+2. Select Landscape (0°), Portrait (90°), Inverted Landscape (180°), Inverted Portrait (270°).
+3. Check layout adaptation.",Display reorients immediately. Touch coordinates dynamically map to new orientation. UI widgets resize to fit aspect ratio.,Pass - dynamic orientation working,PASSED
+TC-GEN-06,Display & Touch,Status Bar,Global Persistent Top Status Bar Elements,P2,Device booted and active.,"1. Switch between Home, Tasks, Scan, Inventory, Setup screens.
+2. Observe top status bar across all screens.","Top status bar remains persistent with screen title, Wi-Fi IP/status, BLE state, and battery indicator across all navigation screens.",Pass - top status bar persistent,PASSED
+TC-GEN-07,Authentication,Manual Login,User Login via On-Screen Touch Keyboard,P1,Device on Login screen. Valid user credentials exist in NVS/server.,"1. Tap Username field; enter valid User ID (e.g. '1').
+2. Tap Password field; enter valid PIN/Pass.
+3. Tap 'Login' button.",Login succeeds. Device switches to Home screen. Status bar displays active operator name. Server receives MQTT status update with user ID.,Pass - authenticates operator 1,PASSED
+TC-GEN-08,Authentication,Badge Scan Login,Instant User Login via Barcode / QR Badge Scan,P1,Device on Login screen. User badge barcode prepared.,"1. Aim scanner at operator badge barcode (e.g. SKU/ID '1' or 'OP-1001').
+2. Press hardware scan trigger button.","GM65 reads barcode, emits success chime, automatically logs in operator without typing, and transitions directly to Home screen.",Pass - badge scan instant login verified,PASSED
+TC-GEN-09,Authentication,Role Permissions,Supervisor / Admin Mode vs Operator Mode,P2,Admin user (e.g. 'admin') and Operator user configured.,"1. Login as standard Operator -> Verify assigned tasks view.
+2. Logout and login as Supervisor/Admin -> Verify task access.",Operator only views tasks specifically assigned to their ID. Supervisor/Admin has visibility into all system tasks and advanced settings.,Pass - role filtering confirmed,PASSED
+TC-GEN-10,Authentication,User Logout,Session Termination and Screen Reset,P2,User logged in.,"1. From Home screen or Setup screen, tap 'Logout'.
+2. Confirm logout.","Session clears, active task is aborted, user state resets to 'No Login', server is notified via MQTT, and UI returns to Login screen.",Pass - logout cleans state,PASSED
+TC-GEN-11,Barcode Engine,Hardware Trigger,Hardware Button Scan Triggering (GPIO GM65),P1,"Scanner booted, user logged in, physical trigger button connected.","1. Aim scanner at a standard 1D Code 128 barcode.
+2. Pull hardware trigger switch.
+3. Check scan response.","Scanner aimer illuminates, GM65 decodes barcode, emits success beep chime, and decoded string appears in application immediately.",Pass - UART1 9600 baud instant decode,PASSED
+TC-GEN-12,Barcode Engine,Symbologies,Multi-Symbology Decoding (1D Barcodes & 2D QR Codes),P1,"Sample test sheet with EAN-13, UPC-A, Code 39, Code 128, DataMatrix, and QR codes.","1. Scan each barcode symbology one by one.
+2. Observe decoded output and beep feedback.",All supported symbologies decode accurately within < 100ms. String content matches encoded barcode data exactly.,Ready to Test,Ready to Test
+TC-GEN-13,Barcode Engine,Hardware Controls,Illumination LED and Collimation Aimer Control,P2,User in Settings or MQTT hardware command.,"1. Toggle Lighting switch in Settings (or send MQTT lighting: 100/0).
+2. Toggle Collimation switch in Settings (or send collimation: 100/0).",GM65 lighting LED turns ON/OFF or dims as commanded. Red aiming beam turns ON/OFF accordingly.,Pass - GM65 command bytes verified,PASSED
+TC-GEN-14,Barcode Engine,Audio Feedback,Scan Audio Feedback (Success Chime vs Error Buzzer),P2,Device audio enabled.,"1. Scan a valid barcode matching an inventory SKU.
+2. Scan an invalid barcode or over-pick an item.",Valid scan triggers pleasant 2-tone success chime on speaker. Invalid/error scan triggers distinct low-pitched error buzz.,Pass - ES8311 audio feedback verified,PASSED
+TC-GEN-15,Inventory,Real-Time Sync,Inventory Sync from Server via MQTT (`config/inventory`),P1,Scanner connected to Wi-Fi and MQTT.,"1. Add/edit an inventory SKU in the Web Dashboard.
+2. Check Scanner Inventory screen.","Scanner receives retained MQTT payload on 'config/inventory', updates internal inventory list, and displays updated items on screen.",Pass - synced 60+ SKUs cleanly,PASSED
+TC-GEN-16,Inventory,Search & Filter,Inventory Search by SKU or Item Name,P2,Inventory screen populated with multiple products.,"1. Tap Search input bar.
+2. Type SKU prefix (e.g. 'SKU-001') or name keyword (e.g. 'Apple').","Inventory list dynamically filters in real-time, showing only matching items with stock quantities.",Ready to Test,Ready to Test
+TC-GEN-17,Inventory,Quantity Adjust,"Manual Stock Quantity Adjustment (+, -, Keypad)",P1,Item selected in Inventory screen.,"1. Tap an item in inventory list to open Qty Adjust screen.
+2. Use '+' and '-' buttons or type new quantity.
+3. Tap 'Save / Update'.","Quantity updates locally, transmits MQTT update to server database, and server reflects new stock count.",Pass - bidirectional sync confirmed,PASSED
+TC-GEN-18,Task Management,Task Fetching,Online Task Assignment Sync (`device/<id>/tasks`),P1,Scanner logged in as Operator 1.,"1. In Web Dashboard, create a new task assigned to Operator 1.
+2. Check Tasks screen on scanner.","Task appears in real-time on scanner with Task Name, Priority badge (High/Med/Low), and item requirements count.",Pass - real-time task push verified,PASSED
+TC-GEN-19,Task Management,Fulfillment Scan,Task Item Checklist Fulfillment via Barcode Scan,P1,Task active with required items (e.g. 5x SKU-001).,"1. Open task.
+2. Scan barcode for required SKU.
+3. Observe picked counter (e.g. 1/5 -> 2/5).","Each valid scan increments picked count for that specific SKU, plays success chime, and updates item progress bar.",Pass - checklist increments verified,PASSED
+TC-GEN-20,Task Management,Over-Scan Prevention,Prevent Over-Picking beyond Target Quantity,P2,Item requirement fulfilled (e.g. 5/5 picked).,1. Attempt to scan the same SKU once more.,"Scanner rejects scan, sounds error buzzer, displays 'Item Already Fulfilled' warning toast, and does not exceed required count.",Ready to Test,Ready to Test
+TC-GEN-21,Task Management,Task Completion,Task Completion Event & Server Notification,P1,All required items in task fully scanned.,"1. Scan final required item.
+2. Tap 'Complete Task' button (or auto-completes).","Scanner displays celebratory completion screen, publishes completion payload to 'device/<id>/task_complete', and task moves to completed on dashboard.",Pass - task_complete MQTT published,PASSED
+TC-GEN-22,Connectivity,Wi-Fi Setup,Wi-Fi AP Scan and Credential Storage to NVS,P1,Device in Setup / Network screen.,"1. Open Network screen.
+2. Enter Wi-Fi SSID and Password.
+3. Tap 'Connect & Save'.","Credentials are encrypted and saved to NVS namespace 'wifi_store'. ESP32 connects to AP, obtains DHCP IP, and reconnects automatically on reboot.",Pass - NVS storage and connect verified,PASSED
+TC-GEN-23,Connectivity,Wi-Fi Auto-Reconnect,Auto-Reconnection on Router Power Cycle,P1,Device connected to Wi-Fi.,"1. Turn off Wi-Fi router / mobile hotspot for 30 seconds.
+2. Turn router back on.","Device detects STA disconnect, updates status bar to 'Disconnected', enters auto-reconnect loop, and reconnects automatically within 5s of AP reappearance.",Pass - auto-reconnect event working,PASSED
+TC-GEN-24,Connectivity,MQTT Reconnection,MQTT Broker Reconnection & State Recovery,P1,Device connected to local MQTT broker on port 1883.,"1. Restart MQTT broker service on host.
+2. Observe device connection behavior.","MQTT client automatically reconnects, re-subscribes to required topics (tasks, inventory, hardware, ota), and publishes 'online' status update.",Pass - auto-re-subscribe verified,PASSED
+TC-GEN-25,Bluetooth BLE,Advertising Name,BLE Device Name Format (`ScanPro-XXXX` with MAC),P2,BLE enabled on scanner.,"1. Open Bluetooth settings on smartphone or PC.
+2. Scan for available BLE devices.",Device appears as 'ScanPro-XXXX' where XXXX matches the last 4 characters of the device's hardware MAC address (e.g. 'ScanPro-5664').,Pass - MAC 10:20:ba:46:56:64 -> ScanPro-5664,PASSED
+TC-GEN-26,Bluetooth BLE,HID Keyboard Pairing,BLE HID Keyboard Mode Pairing & Keystroke Injection,P1,Smartphone / PC paired with scanner.,"1. Pair scanner with phone or laptop.
+2. Open Notepad or any text field on phone/PC.
+3. Scan any barcode with scanner.","Scanned barcode characters are instantly typed into the active text field followed by an Enter key press, simulating a USB barcode gun.",Ready to Test,Ready to Test
+TC-GEN-27,Bluetooth BLE,BLE Toggle,BLE Service Toggle ON / OFF from Setup Screen,P2,Device in Setup screen.,"1. Tap 'Disable BLE' button -> Check Bluetooth visibility on phone.
+2. Tap 'Enable BLE' button -> Check Bluetooth visibility.","When disabled, BLE stack stops advertising and disconnects. When enabled, BLE restarts advertising and status bar updates to 'BLE: Adv...'.",Pass - dynamic BLE toggle working,PASSED
+TC-GEN-28,Two-Way Audio,PTT Transmission,Microphone Recording & WebSocket Audio Streaming,P1,Scanner and Web Dashboard both online.,"1. Press and hold hardware PTT button (or on-screen PTT toggle).
+2. Speak into scanner microphone.
+3. Release PTT button.","ES8311 captures voice audio, filters silence via VAD, streams binary PCM packets over WebSocket to server, and server dashboard plays voice aloud.",Pass - audio client connected & streaming,PASSED
+TC-GEN-29,Two-Way Audio,Audio Broadcast,Audio Announcement Reception and Speaker Playback,P1,Scanner speaker enabled.,"1. From Web Dashboard, trigger voice broadcast or chime to scanner.
+2. Observe scanner speaker output.","TCA9554 P7 / GPIO17 enables speaker power amplifier, audio chunk streams into ring buffer, and speaker outputs clear audio without distortion.",Pass - 16kHz I2S playback verified,PASSED
+TC-GEN-30,Firmware Updates,Normal OTA,Standard OTA Firmware Update (Happy Path),P1,Device online on Wi-Fi. New firmware uploaded on server.,"1. Trigger OTA update from Web dashboard targeting scanner.
+2. Observe full download and reboot.","Device transitions to OTA screen, downloads firmware (0% to 100%), verifies checksum, sets next boot partition, and reboots into updated version.",Pass - full clean OTA verified,PASSED
+TC-GEN-31,Firmware Updates,Resilient Resume,OTA Wi-Fi Disconnect mid-download and Auto-Resume,P1,OTA download in progress at 50% - 75%.,"1. Disconnect Wi-Fi during download.
+2. Verify LCD shows 'Wi-Fi Lost (XX%)'.
+3. Restore Wi-Fi.","Device detects drop within 4s, pauses cleanly, displays recovery message, sends HTTP Range header, resumes from exact percentage, and completes OTA.",Pass - HTTP 206 Range resume verified,PASSED
+TC-GEN-32,Firmware Updates,Fail-Safe Rollback,Invalid / Corrupt Firmware File Upload Rejection,P1,OTA triggered with non-ESP32 or corrupted binary file.,"1. Deploy corrupted firmware binary.
+2. Observe device verification and partition state.","Device detects invalid magic byte or fails esp_ota_end verification, aborts write, displays error toast, and remains safely on existing boot partition.",Ready to Test,Ready to Test
+TC-GEN-33,Stress & Reliability,Memory Stability,Free Heap and PSRAM Stability during Continuous Use,P2,Device running continuous operations.,"1. Execute 100 consecutive barcode scans.
+2. Switch screens 50 times.
+3. Transmit 10 PTT voice clips.
+4. Monitor FreeRTOS heap telemetry.","No memory leaks observed. Internal SRAM remaining > 100KB, PSRAM remaining > 4MB. No task stack overflow or watchdog resets.",Pass - 0 memory leaks observed,PASSED
+TC-GEN-34,Stress & Reliability,Rapid Triggering,Rapid-Fire Barcode Scanning Stress Test,P2,Device on Tasks or Scan screen.,1. Trigger hardware scan button 30 times in 15 seconds against various barcodes.,"Scanner processes all scans sequentially without buffer overflow, lockup, or missed frames. UI scan counter increments accurately.",Ready to Test,Ready to Test
+TC-GEN-35,Stress & Reliability,Long-Term Uptime,Extended 8-Hour Shift Uptime without Lockup,P2,Scanner powered on in normal warehouse standby/active cycle for 8 hours.,"1. Keep device active for full work shift.
+2. Perform periodic scans, audio checks, and task updates.","Device remains responsive, maintains Wi-Fi and MQTT connectivity, battery drains smoothly according to power profile, zero reboots.",Ready to Test,Ready to Test

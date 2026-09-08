@@ -10,16 +10,19 @@
 #include "esp_axp2101_port.h"
 #include "driver/i2c.h"
 
+#include "nvs_flash.h"
 #include "display_port.h"
 #include "esp_lvgl_port.h"
 #include "ui_screens.h"
+#include "ble_scanner.h"
 
 static const char *TAG = "MAIN_APP";
 
 // Stubs for UI logic
 volatile bool is_ptt_pressed = false;
 void devicePowerOff() {
-    ESP_LOGI(TAG, "Device power off requested.");
+    ESP_LOGI(TAG, "Device power off requested. Commanding AXP2101 PMIC to shut down...");
+    esp_axp2101_power_off();
 }
 
 // Callback executed whenever a barcode scan is decoded by GM65 scanner
@@ -38,6 +41,29 @@ static void on_barcode_scanned(const std::string &sku)
         return;
     }
 
+    if (active_task == NULL) {
+        bool started_task = false;
+        bool is_item = false;
+        if (lvgl_port_lock(-1)) {
+            started_task = uiTryStartTask(sku, is_item);
+            lvgl_port_unlock();
+        }
+
+        if (started_task) {
+            ESP_LOGI(TAG, "Task started directly via scan!");
+            if (!is_item) {
+                beepStartup(); // Just opened task via Task ID
+                return;
+            }
+            // If it is an item, fall through to process the pick
+        } else {
+            // Ignore non-task barcodes when not currently in an active task
+            beepError();
+            ESP_LOGW(TAG, "Scanned barcode %s is not a known Task ID or Item. Ignoring.", sku.c_str());
+            return;
+        }
+    }
+
     if (active_task != NULL) {
         bool match_found = false;
         bool all_done = true;
@@ -46,17 +72,24 @@ static void on_barcode_scanned(const std::string &sku)
             TaskItem &item = active_task->items[i];
             if (sku == item.sku) {
                 match_found = true;
-                if (item.picked_qty < item.target_qty) {
-                    item.picked_qty++;
-                    beepSuccess(); // Success beep
+                if (item.picked_qty >= item.target_qty) {
+                    beepError(); // Item is already fully picked!
                     if (lvgl_port_lock(-1)) {
-                        update_task_detail_ui();
+                        uiShowTaskError("Item already fully picked!");
                         lvgl_port_unlock();
                     }
-                    ESP_LOGI(TAG, "Task Item Picked: %s (%d/%d)", item.name, item.picked_qty, item.target_qty);
-                } else {
-                    beepError(); // Error beep (already picked)
+                    ESP_LOGW(TAG, "Item %s is already fully picked (%d/%d). Ignoring scan.", item.name, item.picked_qty, item.target_qty);
+                    return;
                 }
+
+                selected_task_item_sku = item.sku; // Open ones, tens, hundreds buttons for this scanned item!
+                item.picked_qty++;
+                beepSuccess(); // Success beep
+                if (lvgl_port_lock(-1)) {
+                    update_task_detail_ui();
+                    lvgl_port_unlock();
+                }
+                ESP_LOGI(TAG, "Task Item Scanned: %s (%d/%d)", item.name, item.picked_qty, item.target_qty);
             }
             if (item.picked_qty < item.target_qty) {
                 all_done = false;
@@ -65,34 +98,21 @@ static void on_barcode_scanned(const std::string &sku)
         
         if (!match_found) {
             beepError(); // Error beep (not in task)
+            if (lvgl_port_lock(-1)) {
+                uiShowTaskError("Item not in this task!");
+                lvgl_port_unlock();
+            }
+            return;
         } else if (all_done) {
             beepStartup(); // Special sound
-            
-            strncpy(active_task->status, "complete", sizeof(active_task->status) - 1);
-            network_publish_task_complete(active_task->id);
             ESP_LOGI(TAG, "Task %s COMPLETED!", active_task->id);
-            
             if (lvgl_port_lock(-1)) {
-                active_task = NULL;
+                complete_and_deduct_task(active_task);
                 _load_scr_direct(scr_tasks, "Tasks");
                 update_tasks_ui();
                 lvgl_port_unlock();
             }
-        }
-    } else {
-        // Normal product scan flow
-        beepSuccess();
-        
-        if (lvgl_port_lock(-1)) {
-            uiShowScanResult(sku);
-            lvgl_port_unlock();
-        }
-
-        bool sent = network_publish_scan(sku);
-        if (sent) {
-            ESP_LOGI(TAG, "Scan successfully published to server!");
-        } else {
-            ESP_LOGW(TAG, "MQTT disconnected - scan recorded locally.");
+            return;
         }
     }
 }
@@ -103,10 +123,35 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, " Smart Barcode Scanner Firmware (Native ESP-IDF)  ");
     ESP_LOGI(TAG, "==================================================");
 
+    // 0. Initialize NVS Flash Subsystem FIRST so display rotation and hardware preferences load
+    esp_err_t nvs_ret = nvs_flash_init();
+    if (nvs_ret == ESP_ERR_NVS_NO_FREE_PAGES || nvs_ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        nvs_ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(nvs_ret);
+    ESP_LOGI(TAG, "NVS Flash Subsystem Initialized: OK");
+
     // 1. Initialize Display, Touch, PMIC, and LVGL Subsystem
     esp_err_t disp_res = display_port_init();
     if (disp_res == ESP_OK) {
         ESP_LOGI(TAG, "Display Subsystem & LVGL Port: OK");
+        
+        // Load saved display rotation preference immediately
+        display_port_load_rotation();
+
+        // Immediately show ONLY the direct logo centered on screen
+        if (lvgl_port_lock(-1)) {
+            uiShowSplash();
+            lv_refr_now(NULL); // Immediately render and DMA-transfer the splash logo to display
+            lvgl_port_unlock();
+        }
+
+        // Small delay to allow SPI DMA frame transfer to finish
+        vTaskDelay(pdMS_TO_TICKS(50));
+
+        // Turn on backlight directly onto the logo (zero white screen, direct logo only!)
+        display_port_set_backlight(80);
     } else {
         ESP_LOGE(TAG, "Display Subsystem Init Failed: %d", disp_res);
     }
@@ -131,9 +176,18 @@ extern "C" void app_main(void)
         ESP_LOGE(TAG, "Network Subsystem Init Failed: %d", net_res);
     }
 
+    // 4.5 Initialize Bluetooth LE Advertising Stack
+    vTaskDelay(pdMS_TO_TICKS(500)); // Allow Wi-Fi PHY to settle to prevent Watchdog Triggers
+    ble_scanner_init();
+
     // 5. Initialize LVGL UI Screens under LVGL Port Lock
     if (lvgl_port_lock(-1)) {
         uiInit();
+        
+        // Force all screens to run their resize callbacks to match the boot orientation,
+        // which prevents overlapping UI elements when booting into Portrait mode.
+        uiApplyBootOrientation();
+        
         lvgl_port_unlock();
     }
 
@@ -142,7 +196,7 @@ extern "C" void app_main(void)
     // System Monitor Loop (LVGL tick and flush managed by esp_lvgl_port task)
     uint32_t last_log = 0;
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Yield to other tasks
+        vTaskDelay(pdMS_TO_TICKS(10)); // Yield to other tasks
 
         uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
         if (now - last_log > 10000) {

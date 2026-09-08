@@ -9,6 +9,8 @@
 #include "esp_websocket_client.h"
 #include "esp_lvgl_port.h"
 #include "ui_screens.h"
+#include "ota_task.h"
+#include "gm65_scanner.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -17,6 +19,7 @@
 
 static const char *TAG = "NETWORK_MQTT";
 static bool wifi_connected = false;
+static bool mqtt_connected = false;
 static esp_mqtt_client_handle_t mqtt_client = NULL;
 static esp_websocket_client_handle_t ws_client = NULL;
 static RingbufHandle_t audio_rx_ringbuf = NULL;
@@ -33,6 +36,7 @@ static void audio_rx_task(void *pvParameters)
             if (rx_data && item_size > 0) {
                 esp_es8311_play(rx_data, item_size);
                 vRingbufferReturnItem(audio_rx_ringbuf, (void *)rx_data);
+                vTaskDelay(pdMS_TO_TICKS(2)); // Guaranteed yield after processing packet
             } else {
                 vTaskDelay(pdMS_TO_TICKS(5));
             }
@@ -76,6 +80,9 @@ static void audio_tx_task(void *pvParameters)
         if (peak > VAD_THRESHOLD && ws_client && esp_websocket_client_is_connected(ws_client)) {
             esp_websocket_client_send_bin(ws_client, (const char *)mic_buf, bytes_read, pdMS_TO_TICKS(50));
         }
+        
+        // Always yield to prevent CPU starvation on Core 1 if I2S driver returns too quickly
+        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
 
@@ -207,9 +214,30 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         esp_mqtt_client_subscribe(mqtt_client, task_topic.c_str(), 1);
         esp_mqtt_client_subscribe(mqtt_client, "config/inventory", 1);
         esp_mqtt_client_subscribe(mqtt_client, "config/users", 1);
+        
+        std::string ota_topic = "device/" + std::string(DEVICE_ID) + "/ota";
+        esp_mqtt_client_subscribe(mqtt_client, ota_topic.c_str(), 1);
+        esp_mqtt_client_subscribe(mqtt_client, "config/ota", 1);
+
+        std::string hw_topic = "device/" + std::string(DEVICE_ID) + "/hardware";
+        esp_mqtt_client_subscribe(mqtt_client, hw_topic.c_str(), 1);
+        ESP_LOGI(TAG, "Subscribed to hardware control topic: %s", hw_topic.c_str());
 
         // Publish device online status
-        network_publish_device_status(true, is_logged_in ? logged_in_user : "No Login");
+        mqtt_connected = true;
+        network_publish_device_status(true, is_logged_in ? (strlen(logged_in_user_id) > 0 ? logged_in_user_id : logged_in_user) : "No Login");
+        break;
+    }
+    case MQTT_EVENT_DISCONNECTED: {
+        ESP_LOGW(TAG, "MQTT Broker disconnected!");
+        mqtt_connected = false;
+        global_inventory_count = 0;
+        current_task_count = 0;
+        if (lvgl_port_lock(-1)) {
+            update_inventory_ui();
+            update_tasks_ui();
+            lvgl_port_unlock();
+        }
         break;
     }
     case MQTT_EVENT_DATA: {
@@ -239,6 +267,47 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             } else if (current_topic == "config/users") {
                 ESP_LOGI(TAG, "Parsing users update from server...");
                 ui_update_users_from_json(current_payload.c_str());
+            } else if (current_topic == "config/ota" || current_topic == "device/" + std::string(DEVICE_ID) + "/ota") {
+                ESP_LOGI(TAG, "Received OTA trigger from server!");
+                cJSON *root = cJSON_Parse(current_payload.c_str());
+                if (root) {
+                    cJSON *url_node = cJSON_GetObjectItem(root, "url");
+                    if (url_node && url_node->valuestring) {
+                        if (lvgl_port_lock(0)) {
+                            ui_show_ota_screen();
+                            lvgl_port_unlock();
+                        }
+                        ota_start_task(url_node->valuestring);
+                    }
+                    cJSON_Delete(root);
+                }
+            } else if (current_topic == "device/" + std::string(DEVICE_ID) + "/hardware") {
+                ESP_LOGI(TAG, "Received hardware control command!");
+                cJSON *root = cJSON_Parse(current_payload.c_str());
+                if (root) {
+                    cJSON *lighting_node = cJSON_GetObjectItem(root, "lighting");
+                    cJSON *collim_node   = cJSON_GetObjectItem(root, "collimation");
+                    int lighting    = lighting_node   ? lighting_node->valueint   : -1;
+                    int collimation = collim_node     ? collim_node->valueint     : -1;
+                    ESP_LOGI(TAG, "HW Control: lighting=%d%%, collimation=%d%%", lighting, collimation);
+                    
+                    if (lighting >= 0) gm65_set_lighting(lighting);
+                    if (collimation >= 0) gm65_set_collimation(collimation);
+
+                    if (lvgl_port_lock(-1)) {
+                        // Update the settings switches in the UI to reflect new values
+                        if (collim_switch_ptr && collimation >= 0) {
+                            if (collimation > 0) lv_obj_add_state(collim_switch_ptr, LV_STATE_CHECKED);
+                            else lv_obj_clear_state(collim_switch_ptr, LV_STATE_CHECKED);
+                        }
+                        if (light_switch_ptr && lighting >= 0) {
+                            if (lighting > 0) lv_obj_add_state(light_switch_ptr, LV_STATE_CHECKED);
+                            else lv_obj_clear_state(light_switch_ptr, LV_STATE_CHECKED);
+                        }
+                        lvgl_port_unlock();
+                    }
+                    cJSON_Delete(root);
+                }
             }
         }
         break;
@@ -359,6 +428,7 @@ bool network_publish_device_status(bool is_online, const char *user)
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "status", is_online ? "online" : "offline");
     cJSON_AddStringToObject(root, "user", (user && strlen(user) > 0) ? user : "No Login");
+    cJSON_AddStringToObject(root, "version", FIRMWARE_VERSION);
     cJSON_AddNumberToObject(root, "ts", (double)esp_log_timestamp());
 
     char *json_str = cJSON_PrintUnformatted(root);
@@ -376,11 +446,23 @@ bool network_publish_device_status(bool is_online, const char *user)
 
 bool network_publish_task_complete(const char *task_id)
 {
+    return network_publish_task_complete_payload(task_id, NULL);
+}
+
+bool network_publish_task_complete_payload(const char *task_id, const char *items_json_str)
+{
     if (!wifi_connected || !mqtt_client || !task_id) return false;
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "task_id", task_id);
     cJSON_AddStringToObject(root, "device_id", DEVICE_ID);
+
+    if (items_json_str) {
+        cJSON *items = cJSON_Parse(items_json_str);
+        if (items) {
+            cJSON_AddItemToObject(root, "items", items);
+        }
+    }
 
     char *json_str = cJSON_PrintUnformatted(root);
     std::string topic = "device/" + std::string(DEVICE_ID) + "/task_complete";
@@ -390,14 +472,20 @@ bool network_publish_task_complete(const char *task_id)
     cJSON_Delete(root);
     free(json_str);
 
-    ESP_LOGI(TAG, "Published task completion (task_id='%s') to topic %s (msg_id=%d)",
-             task_id, topic.c_str(), msg_id);
+    ESP_LOGI(TAG, "Published task completion (task_id='%s', has_items=%d) to topic %s (msg_id=%d)",
+             task_id, items_json_str ? 1 : 0, topic.c_str(), msg_id);
     return msg_id >= 0;
 }
+
 
 bool network_is_wifi_connected(void)
 {
     return wifi_connected;
+}
+
+bool network_is_server_connected(void)
+{
+    return wifi_connected && mqtt_connected;
 }
 
 void network_set_ptt(bool pressed)

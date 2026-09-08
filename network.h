@@ -17,7 +17,7 @@
 // ---- WiFi & MQTT Configuration ----
 inline char wifi_ssid[64]     = DEFAULT_WIFI_SSID;
 inline char wifi_password[64] = DEFAULT_WIFI_PASS;
-static const char *MQTT_HOST     = "192.168.0.112"; // your MQTT broker IP/hostname
+static const char *MQTT_HOST     = "192.168.0.113"; // your MQTT broker IP/hostname
 static const uint16_t MQTT_PORT  = 1883;             // use 8883 + WiFiClientSecure for TLS in production
 static const char *DEVICE_ID     = "scanpro-test-01";
 // ------------------------------------------
@@ -27,6 +27,10 @@ static PubSubClient mqtt(wifiClient);
 static WebSocketsClient audioWs;
 
 inline bool publishDeviceStatus(bool loggedIn, const char* userId);
+
+inline bool isServerConnected() {
+  return (WiFi.status() == WL_CONNECTED && mqtt.connected());
+}
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/ringbuf.h>

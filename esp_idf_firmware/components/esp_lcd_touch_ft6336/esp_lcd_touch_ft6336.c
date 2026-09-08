@@ -243,6 +243,10 @@ static esp_err_t touch_ft6336_i2c_read(esp_lcd_touch_handle_t tp, uint8_t reg, u
 
 static esp_err_t touch_ft6336_init(esp_lcd_touch_handle_t tp)
 {
+    // Force FT6336 into Active Mode (0xA5 = 0x00) and maximize idle timeout (0x86 = 0xFF / ~255s)
+    // to prevent I2C bus stalls when the controller enters low-power Monitor mode.
+    touch_ft6336_i2c_write(tp, 0xA5, 0x00);
+    touch_ft6336_i2c_write(tp, 0x86, 0xFF);
     return ESP_OK;
 }
 

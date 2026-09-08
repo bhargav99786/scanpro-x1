@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="ota-target-grid">
+        <label for="ota-all">All<input type="radio" name="otaTarget" value="all" id="ota-all" checked></label>
+    </div>
+    <script>
+        const grid = document.getElementById('ota-target-grid');
+        grid.innerHTML += `<label for="ota-1">1<input type="radio" name="otaTarget" value="1" id="ota-1"></label>`;
+        grid.innerHTML += `<label for="ota-2">2<input type="radio" name="otaTarget" value="2" id="ota-2"></label>`;
+    </script>
+</body>
+</html>
