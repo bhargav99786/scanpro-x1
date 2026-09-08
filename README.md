@@ -107,8 +107,6 @@ smart_barcode_scanner/
 ├── ui_screens.h               # Legacy Arduino UI (reference only)
 ├── ScanPro_X1_General_Testing_Scenarios.xlsx # Comprehensive system test matrix (38+ scenarios)
 ├── ScanPro_X1_General_Testing_Scenarios.csv  # CSV export of general test scenarios
-├── OTA_Resilient_Testing_Scenarios.xlsx      # Multi-layer OTA resilience & corruption test suite
-├── OTA_Resilient_Testing_Scenarios.csv       # CSV export of OTA test scenarios
 └── README.md
 ```
 
@@ -190,9 +188,9 @@ In portrait mode (`width < 400px`), the bottom action bar has 3 buttons perfectl
 
 ## 🧪 Test Documentation & Verification Matrix
 
-The repository includes complete QA testing workbooks and CSV exports designed for hardware-in-the-loop (HIL) and system validation:
+The repository includes a comprehensive QA testing workbook and CSV export designed for hardware-in-the-loop (HIL) and system validation:
 
-### 1. General System Test Matrix (`ScanPro_X1_General_Testing_Scenarios.xlsx`)
+### General System Test Matrix (`ScanPro_X1_General_Testing_Scenarios.xlsx`)
 Comprehensive 38-scenario test suite covering all operational aspects of the device and server ecosystem:
 - **Core Scanning (GM65 UART + BLE):** 1D/2D symbology decoding, rapid batch scanning, damaged/low-contrast code handling.
 - **Real-Time Sync:** Bi-directional MQTT/WebSocket state synchronization under normal and high network loads.
@@ -201,12 +199,6 @@ Comprehensive 38-scenario test suite covering all operational aspects of the dev
 - **Power Management & AXP2101:** Battery ADC accuracy, charge status telemetry, power off button deep sleep/shutdown.
 - **Responsive UI:** Dynamic rotation between portrait (320×480) and landscape (480×320), non-overlapping bottom action buttons.
 - **Offline Resilience:** NVS cached login credentials and offline buffer behavior.
-
-### 2. Multi-Layer OTA Resilience Matrix (`OTA_Resilient_Testing_Scenarios.xlsx`)
-Production resilience testing covering firmware distribution failure modes:
-- **Layer 1 (Client Validation):** Empty files, invalid file extensions, truncated uploads.
-- **Layer 2 (Server Deep Binary Analysis):** Rejection of malformed ESP32 headers, wrong architecture chip IDs, corrupted segment lengths, and tampered/invalid SHA-256 signatures before network distribution.
-- **Layer 3 (Device Hardware Bootloader):** WiFi dropouts during active streaming, dual-partition (`ota_0`/`ota_1`) automatic rollback, and watchdog timer recovery.
 
 ---
 
