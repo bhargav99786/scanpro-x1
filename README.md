@@ -169,23 +169,6 @@ Update these values in `esp_idf_firmware/main/network_mqtt.cpp` or `network.h`:
 
 ---
 
-## 🔘 Portrait Mode Bottom Bar
-
-In portrait mode (`width < 400px`), the bottom action bar has 3 buttons perfectly side-by-side with no overlap:
-
-```
-┌─────────────────────────────────┐
-│                                 │
-│        [ Screen Content ]       │
-│                                 │
-├─────────────────────────────────┤
-│ [⏻ OUT] [⏻ OFF] [🔊 TALK]     │
-│  74px    74px    74px (PTT)     │
-└─────────────────────────────────┘
-```
-
----
-
 ## 🧪 Test Documentation & Verification Matrix
 
 The repository includes a comprehensive QA testing workbook and CSV export designed for hardware-in-the-loop (HIL) and system validation:
